@@ -64,6 +64,10 @@
 
     // ── LICENSE HELPERS ──────────────────────────────────────────────────────
     function getDeviceId() {
+      // Use Telegram ID if logged in, else browser fingerprint
+      if (tgUser && tgUser.id && tgUser.id > 0) {
+        return "TG" + tgUser.id.toString(36).toUpperCase();
+      }
       const nav = window.navigator;
       const raw = [nav.userAgent, nav.language, screen.width, screen.height,
         nav.hardwareConcurrency, Intl.DateTimeFormat().resolvedOptions().timeZone].join('|');
@@ -330,9 +334,10 @@ function buildServices(profileKey) {
 function App() {
 
   // ── settings & ui state ──
-  const [step,       setStep]       = useState("onboarding");
+  const [step,       setStep]       = useState("login"); // login → onboarding → app
+  const [tgUser,     setTgUser]     = useState(null);  // {id, name, username, photo}
   const [profile,    setProfile]    = useState("nail");
-  const [license,    setLicense]    = useState(null); // {activatedAt, expiresAt, code}
+  const [license,    setLicense]    = useState(null);
   const [licScreen,  setLicScreen]  = useState(false);
   const [licInput,   setLicInput]   = useState("");
   const [licError,   setLicError]   = useState("");
@@ -429,7 +434,7 @@ function App() {
     saveRef.current = setTimeout(() => {
       try {
         localStorage.setItem("bp6", JSON.stringify({
-          done:true, profile, currency, lang, dark,
+          done:true, tgUser, profile, currency, lang, dark,
           clients, appts, subs, expenses, workCfg, myServices, license
         }));
       } catch(e) {}
@@ -670,7 +675,139 @@ function App() {
   const danBtn = {width:"100%", height:46, borderRadius:14, border:"1.5px solid rgba(251,113,133,.3)", background:"rgba(251,113,133,.08)", color:"#FB7185", fontSize:14, fontWeight:600, cursor:"pointer", marginTop:4, fontFamily:"inherit"};
 
   // ── ONBOARDING ────────────────────────────────────────────────────────────
-  if (step === "onboarding") {
+  // ── LOGIN SCREEN ────────────────────────────────────────────────────────────
+  if (step === "login") {
+    const BOT_USERNAME = "timenergy1"; // Замени на username своего бота когда создашь
+
+    function handleTgAuth(tgData) {
+      // tgData: {id, first_name, last_name, username, photo_url, auth_date, hash}
+      const user = {
+        id: tgData.id,
+        name: tgData.first_name + (tgData.last_name ? " " + tgData.last_name : ""),
+        username: tgData.username || "",
+        photo: tgData.photo_url || "",
+      };
+      setTgUser(user);
+      // Check if already set up
+      try {
+        const saved = localStorage.getItem("bp6");
+        if (saved) {
+          const s = JSON.parse(saved);
+          if (s.done && s.tgUser?.id === user.id) {
+            // Load user data
+            if (s.profile)    setProfile(s.profile);
+            if (s.currency)   setCurrency(s.currency);
+            if (s.lang)       setLang(s.lang);
+            if (s.dark!=null) setDark(s.dark);
+            if (s.clients)    setClients(s.clients);
+            if (s.appts)      setAppts(s.appts);
+            if (s.subs)       setSubs(s.subs);
+            if (s.expenses)   setExpenses(s.expenses);
+            if (s.workCfg)    setWorkCfg(s.workCfg);
+            if (s.myServices) setMyServices(s.myServices);
+            if (s.license)    setLicense(s.license);
+            setStep("app");
+            return;
+          }
+        }
+      } catch(e) {}
+      setStep("onboarding");
+    }
+
+    // Inject Telegram Login Widget script
+    useEffect(() => {
+      window.onTelegramAuth = handleTgAuth;
+      const script = document.createElement('script');
+      script.src = 'https://telegram.org/js/telegram-widget.js?22';
+      script.setAttribute('data-telegram-login', BOT_USERNAME);
+      script.setAttribute('data-size', 'large');
+      script.setAttribute('data-radius', '14');
+      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+      script.setAttribute('data-request-access', 'write');
+      script.async = true;
+      const container = document.getElementById('tg-login-btn');
+      if (container) {
+        container.innerHTML = '';
+        container.appendChild(script);
+      }
+      return () => { delete window.onTelegramAuth; };
+    }, []);
+
+    return (
+      <div style={{minHeight:"100vh", background:"#0D0620",
+        display:"flex", alignItems:"center", justifyContent:"center", padding:20}}>
+        <style>{`@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+          @keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+          @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}`}
+        </style>
+        <div style={{width:"100%", maxWidth:380, animation:"fadeInUp .5s ease-out"}}>
+
+          {/* Logo */}
+          <div style={{textAlign:"center", marginBottom:40}}>
+            <div style={{fontSize:64, animation:"float 3s ease-in-out infinite",
+              filter:"drop-shadow(0 0 30px rgba(255,107,157,.6))", marginBottom:16}}>
+              🌸
+            </div>
+            <div style={{fontWeight:900, fontSize:36, letterSpacing:-1.5, marginBottom:6,
+              background:"linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8)",
+              backgroundSize:"200%", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent",
+              animation:"shimmer 3s linear infinite"}}>
+              GulCRM
+            </div>
+            <div style={{fontSize:14, color:"#7A5F8A", fontWeight:500}}>
+              Beauty Master CRM
+            </div>
+          </div>
+
+          {/* Login card */}
+          <div style={{background:"#1C1035", borderRadius:28, padding:28,
+            border:"1px solid rgba(255,107,157,.15)",
+            boxShadow:"0 20px 60px rgba(0,0,0,.5)"}}>
+
+            <div style={{fontSize:18, fontWeight:800, color:"#FFF0F8",
+              marginBottom:6, textAlign:"center"}}>
+              Добро пожаловать 👋
+            </div>
+            <div style={{fontSize:13, color:"#7A5F8A", textAlign:"center",
+              marginBottom:28, lineHeight:1.6}}>
+              Войдите через Telegram чтобы начать работу
+            </div>
+
+            {/* Telegram Login Widget */}
+            <div id="tg-login-btn" style={{display:"flex", justifyContent:"center",
+              marginBottom:20, minHeight:50}}/>
+
+            {/* Divider */}
+            <div style={{display:"flex", alignItems:"center", gap:12, margin:"20px 0"}}>
+              <div style={{flex:1, height:1, background:"rgba(255,255,255,.06)"}}/>
+              <span style={{fontSize:12, color:"#4A3560"}}>или</span>
+              <div style={{flex:1, height:1, background:"rgba(255,255,255,.06)"}}/>
+            </div>
+
+            {/* Demo / Skip for testing */}
+            <button onClick={()=>{
+              setTgUser({id:0, name:"Мастер", username:"", photo:""});
+              setStep("onboarding");
+            }} style={{width:"100%", height:46, borderRadius:14,
+              border:"1.5px solid rgba(255,255,255,.08)",
+              background:"rgba(255,255,255,.03)",
+              color:"#4A3560", fontSize:13, fontWeight:600,
+              cursor:"pointer", fontFamily:"inherit"}}>
+              Продолжить без входа
+            </button>
+          </div>
+
+          <div style={{textAlign:"center", marginTop:20, fontSize:11, color:"#4A3560", lineHeight:1.8}}>
+            Нажимая «Войти», вы соглашаетесь с условиями использования GulCRM.{"
+"}
+            Ваши данные хранятся только на вашем устройстве.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+    if (step === "onboarding") {
     return (
       <div style={{minHeight:"100vh", background:dark?"#0D0620":"#FFF5FB", display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
         
@@ -678,6 +815,7 @@ function App() {
           <div style={{padding:"28px 22px 18px", textAlign:"center", background:"linear-gradient(135deg,rgba(192,132,252,.15),rgba(129,140,248,.08))"}}>
             <div style={{fontSize:36, marginBottom:6}}>✦</div>
             <div style={{fontWeight:800, fontSize:24, background:"linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8)", backgroundSize:"200%", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", marginBottom:8, animation:"shimmer 3s linear infinite"}}>GulCRM</div>
+            {tgUser?.name && <div style={{fontSize:14, color:"#C4A8D4", marginBottom:4}}>👋 {tgUser.name}</div>}
             <div style={{fontSize:13, color:tx2, lineHeight:1.6}}>{lang==="ru"?"Умный CRM для beauty-мастеров":"Beauty ustalari uchun aqlli CRM"}</div>
             <div style={{display:"flex", justifyContent:"center", gap:8, marginTop:12}}>
               {["ru","uz"].map(l => (
