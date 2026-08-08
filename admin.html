@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GulCRM Admin — Генератор ключей</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:#0D0620;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.card{background:#1C1035;border:1px solid rgba(255,107,157,.2);border-radius:24px;padding:28px;width:100%;max-width:420px;color:#FFF0F8}
+.logo{font-size:36px;margin-bottom:8px;text-align:center}
+h1{font-size:22px;font-weight:900;text-align:center;margin-bottom:4px;
+  background:linear-gradient(135deg,#FF6B9D,#C084FC);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{font-size:13px;color:#7A5F8A;text-align:center;margin-bottom:24px}
+label{font-size:10px;font-weight:700;color:#7A5F8A;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:7px}
+input,select{width:100%;height:48px;background:#241540;border:1.5px solid rgba(255,107,157,.15);
+  border-radius:14px;color:#FFF0F8;font-size:15px;padding:0 16px;outline:none;margin-bottom:16px;
+  font-family:monospace;transition:border .2s}
+input:focus,select:focus{border-color:#FF6B9D}
+select{font-family:-apple-system,sans-serif;cursor:pointer}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.plan{background:#241540;border:1.5px solid rgba(255,107,157,.15);border-radius:14px;
+  padding:12px;text-align:center;cursor:pointer;transition:all .2s}
+.plan:hover,.plan.active{border-color:#FF6B9D;background:rgba(255,107,157,.1)}
+.plan.year.active{border-color:#FFD166;background:rgba(255,215,0,.08)}
+.plan .months{font-size:20px;font-weight:900;color:#FF6B9D;margin-bottom:2px}
+.plan.year .months{color:#FFD166}
+.plan .label{font-size:11px;color:#7A5F8A}
+.plan .price{font-size:12px;color:#C4A8D4;margin-top:4px;font-weight:600}
+.plan .badge{font-size:9px;background:linear-gradient(135deg,#FFD166,#FB923C);
+  color:#fff;padding:2px 7px;border-radius:10px;display:inline-block;margin-top:4px;font-weight:700}
+button{width:100%;height:52px;border-radius:18px;border:none;
+  background:linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8);
+  color:#fff;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.3px;
+  box-shadow:0 6px 24px rgba(255,107,157,.3)}
+button:active{transform:scale(.97)}
+.result{margin-top:16px;padding:20px;
+  background:linear-gradient(135deg,rgba(52,211,153,.08),rgba(52,211,153,.04));
+  border:1px solid rgba(52,211,153,.3);border-radius:18px;text-align:center;display:none}
+.result .key{font-size:26px;font-weight:900;letter-spacing:3px;color:#34D399;
+  font-family:monospace;margin:10px 0;word-break:break-all}
+.result .info{font-size:12px;color:#7A5F8A;margin-top:6px}
+.result .expires{font-size:13px;color:#C4A8D4;font-weight:600;margin-top:4px}
+.copy-btn{margin-top:14px;height:44px;font-size:13px;font-weight:700;
+  background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35)!important;
+  color:#34D399;border-radius:12px;cursor:pointer;width:100%;
+  box-shadow:none!important;background-image:none!important}
+.divider{height:1px;background:rgba(255,107,157,.1);margin:20px 0}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🌸</div>
+  <h1>GulCRM Admin</h1>
+  <div class="sub">Генератор ключей активации</div>
+
+  <label>ID устройства клиента</label>
+  <input type="text" id="deviceId" placeholder="Например: ZCGAS7" maxlength="12"
+    oninput="this.value=this.value.toUpperCase()"/>
+
+  <label>Период подписки</label>
+  <div class="plans">
+    <div class="plan" onclick="selectPlan(1)" id="plan-1">
+      <div class="months">1</div>
+      <div class="label">месяц</div>
+      <div class="price">50 000 сум</div>
+    </div>
+    <div class="plan" onclick="selectPlan(2)" id="plan-2">
+      <div class="months">2</div>
+      <div class="label">месяца</div>
+      <div class="price">100 000 сум</div>
+    </div>
+    <div class="plan" onclick="selectPlan(3)" id="plan-3">
+      <div class="months">3</div>
+      <div class="label">месяца</div>
+      <div class="price">150 000 сум</div>
+    </div>
+    <div class="plan" onclick="selectPlan(6)" id="plan-6">
+      <div class="months">6</div>
+      <div class="label">месяцев</div>
+      <div class="price">270 000 сум</div>
+      <div class="badge">−10%</div>
+    </div>
+    <div class="plan year" onclick="selectPlan(12)" id="plan-12">
+      <div class="months">12</div>
+      <div class="label">месяцев</div>
+      <div class="price">450 000 сум</div>
+      <div class="badge">2 мес бесплатно</div>
+    </div>
+    <div class="plan year" onclick="selectPlan(24)" id="plan-24">
+      <div class="months">24</div>
+      <div class="label">месяца</div>
+      <div class="price">800 000 сум</div>
+      <div class="badge">4 мес бесплатно</div>
+    </div>
+  </div>
+
+  <button onclick="generate()">🔑 Сгенерировать ключ</button>
+
+  <div class="result" id="result">
+    <div style="font-size:11px;color:#7A5F8A;letter-spacing:.5px;text-transform:uppercase">Ключ активации</div>
+    <div class="key" id="keyDisplay"></div>
+    <div class="expires" id="expiresDisplay"></div>
+    <div class="info" id="deviceDisplay"></div>
+    <button class="copy-btn" onclick="copyKey()">📋 Скопировать ключ</button>
+  </div>
+</div>
+
+<script>
+const SECRET = "GULCRM2024";
+let selectedMonths = 0;
+
+function selectPlan(months) {
+  document.querySelectorAll('.plan').forEach(p => p.classList.remove('active'));
+  document.getElementById('plan-' + months).classList.add('active');
+  selectedMonths = months;
+}
+
+function encodeExpiry(months) {
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  const ym = d.getFullYear() * 100 + (d.getMonth() + 1);
+  return ym.toString(36).toUpperCase().padStart(4, '0');
+}
+
+function generateKey(deviceId, months) {
+  const expCode = encodeExpiry(months);
+  const raw = deviceId.toUpperCase() + SECRET + expCode;
+  let h1 = 0x811c9dc5;
+  let h2 = 0xdeadbeef;
+  for (let i = 0; i < raw.length; i++) {
+    h1 ^= raw.charCodeAt(i);
+    h1 = Math.imul(h1, 0x01000193) >>> 0;
+    h2 ^= raw.charCodeAt(raw.length - 1 - i);
+    h2 = Math.imul(h2, 0x9e3779b9) >>> 0;
+  }
+  const p1 = (h1 >>> 0).toString(36).toUpperCase().padStart(6,'0').slice(0,6);
+  const p2 = expCode;
+  const p3 = (h2 >>> 0).toString(36).toUpperCase().padStart(6,'0').slice(0,6);
+  return `${p1}-${p2}-${p3}`;
+}
+
+function generate() {
+  const deviceId = document.getElementById('deviceId').value.trim();
+  if (!deviceId || deviceId.length < 4) {
+    alert('Введите ID устройства клиента (минимум 4 символа)');
+    return;
+  }
+  if (!selectedMonths) {
+    alert('Выберите период подписки');
+    return;
+  }
+  const key = generateKey(deviceId, selectedMonths);
+  
+  // Calc expiry date
+  const d = new Date();
+  d.setMonth(d.getMonth() + selectedMonths);
+  const expStr = d.toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'});
+  
+  const plans = {1:'1 месяц',2:'2 месяца',3:'3 месяца',6:'6 месяцев',12:'1 год',24:'2 года'};
+  
+  document.getElementById('keyDisplay').textContent = key;
+  document.getElementById('expiresDisplay').textContent = '📅 Действует до: ' + expStr;
+  document.getElementById('deviceDisplay').textContent = '📱 Устройство: ' + deviceId + ' · ' + plans[selectedMonths];
+  document.getElementById('result').style.display = 'block';
+}
+
+function copyKey() {
+  const key = document.getElementById('keyDisplay').textContent;
+  navigator.clipboard.writeText(key).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✅ Скопировано!';
+    setTimeout(() => btn.textContent = '📋 Скопировать ключ', 2000);
+  });
+}
+</script>
+</body>
+</html>
