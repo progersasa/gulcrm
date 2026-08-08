@@ -224,30 +224,11 @@ const TK  = dkey(NOW);
 const YD  = new Date(NOW); YD.setDate(NOW.getDate()-1); const YK = dkey(YD);
 const TM  = new Date(NOW); TM.setDate(NOW.getDate()+1); const TMK = dkey(TM);
 
-const DEMO_CL = [
-  {id:1, name:"Дилноза Юсупова",  name_uz:"Dilnoza Yusupova",  av:"Д", avc:"p", phone:"+998 90 123 45 67", birthday:"1995-03-14", note:"⚠️ Аллергия на краску"},
-  {id:2, name:"Камола Рашидова",  name_uz:"Kamola Rashidova",  av:"К", avc:"g", phone:"+998 90 234 56 78", birthday:"1992-07-22", note:""},
-  {id:3, name:"Азиза Хамидова",   name_uz:"Aziza Hamidova",    av:"А", avc:"a", phone:"+998 90 345 67 89", birthday:"1998-11-05", note:"Предпочитает пастельные тона"},
-  {id:4, name:"Нилуфар Каримова", name_uz:"Nilufar Karimova",  av:"Н", avc:"r", phone:"+998 90 456 78 90", birthday:"1990-01-30", note:""},
-  {id:5, name:"Барно Тошматова",  name_uz:"Barno Toshmatova",  av:"Б", avc:"b", phone:"+998 90 567 89 01", birthday:"1988-09-18", note:""},
-  {id:6, name:"Феруза Мирзаева",  name_uz:"Feruza Mirzayeva",  av:"Ф", avc:"t", phone:"+998 90 678 90 12", birthday:"2000-06-02", note:""},
-];
+const DEMO_CL = [];
 
-const DEMO_AP = [
-  {id:101, dateKey:TK,  time:"10:00", clientId:1, clientName:"Дилноза Юсупова",  clientName_uz:"Dilnoza Yusupova",  svc:"Маникюр + гель-лак",     svc_uz:"Manikur + gel-lak",    status:"debt", priceUzs:250000, dur:90},
-  {id:102, dateKey:TK,  time:"12:00", clientId:2, clientName:"Камола Рашидова",  clientName_uz:"Kamola Rashidova",  svc:"Педикюр классический",   svc_uz:"Klassik pedikur",      status:"paid", priceUzs:200000, dur:60},
-  {id:103, dateKey:TK,  time:"14:00", clientId:3, clientName:"Азиза Хамидова",   clientName_uz:"Aziza Hamidova",    svc:"Маникюр + гель-лак",     svc_uz:"Manikur + gel-lak",    status:"sub",  priceUzs:0,      dur:90},
-  {id:104, dateKey:TK,  time:"16:30", clientId:4, clientName:"Нилуфар Каримова", clientName_uz:"Nilufar Karimova",  svc:"Дизайн ногтей",          svc_uz:"Tirnoq dizayni",       status:"debt", priceUzs:215000, dur:60},
-  {id:105, dateKey:YK,  time:"11:00", clientId:5, clientName:"Барно Тошматова",  clientName_uz:"Barno Toshmatova",  svc:"Педикюр + покрытие",     svc_uz:"Pedikur + qoplama",    status:"paid", priceUzs:300000, dur:90},
-  {id:106, dateKey:YK,  time:"15:00", clientId:6, clientName:"Феруза Мирзаева",  clientName_uz:"Feruza Mirzayeva",  svc:"Маникюр классический",   svc_uz:"Klassik manikur",      status:"paid", priceUzs:150000, dur:60},
-  {id:107, dateKey:TMK, time:"10:30", clientId:1, clientName:"Дилноза Юсупова",  clientName_uz:"Dilnoza Yusupova",  svc:"Маникюр + гель-лак",     svc_uz:"Manikur + gel-lak",    status:"paid", priceUzs:250000, dur:90},
-];
+const DEMO_AP = [];
 
-const DEMO_SB = [
-  {id:1, clientId:3, clientName:"Азиза Хамидова",  clientName_uz:"Aziza Hamidova",  av:"А", avc:"a", svc:"Маникюр + гель-лак",   svc_uz:"Manikur + gel-lak",  used:6, total:10, priceUzs:2000000},
-  {id:2, clientId:5, clientName:"Барно Тошматова", clientName_uz:"Barno Toshmatova", av:"Б", avc:"b", svc:"Педикюр классический", svc_uz:"Klassik pedikur",    used:3, total:8,  priceUzs:1400000},
-  {id:3, clientId:2, clientName:"Камола Рашидова", clientName_uz:"Kamola Rashidova", av:"К", avc:"g", svc:"Коррекция формы",     svc_uz:"Shaklni tuzatish",   used:1, total:5,  priceUzs:350000},
-];
+const DEMO_SB = [];
 
 const EXP_CATS = [
   {id:"materials", emoji:"🧴", ru:"Материалы",   uz:"Materiallar"},
@@ -259,13 +240,7 @@ const EXP_CATS = [
   {id:"other",     emoji:"📦", ru:"Другое",      uz:"Boshqa"},
 ];
 
-const DEMO_EX = [
-  {id:201, dateKey:TK,  catId:"materials", desc:"Гель-лаки OPI (10 шт)",  amtUzs:450000},
-  {id:202, dateKey:TK,  catId:"rent",      desc:"Аренда за месяц",         amtUzs:800000},
-  {id:203, dateKey:YK,  catId:"materials", desc:"Пилки и бафы",            amtUzs:85000},
-  {id:204, dateKey:YK,  catId:"tools",     desc:"Лампа для полимеризации", amtUzs:320000},
-  {id:205, dateKey:TMK, catId:"marketing", desc:"Реклама в Instagram",     amtUzs:150000},
-];
+const DEMO_EX = [];
 
 // ─── AVATAR COLORS ────────────────────────────────────────────────────────────
 const AVC = {
@@ -369,10 +344,10 @@ function App() {
   const [modal,      setModal]      = useState(null);
 
   // ── data ──
-  const [clients,  setClients]  = useState(DEMO_CL);
-  const [appts,    setAppts]    = useState(DEMO_AP);
-  const [subs,     setSubs]     = useState(DEMO_SB);
-  const [expenses, setExpenses] = useState(DEMO_EX);
+  const [clients,  setClients]  = useState([]);
+  const [appts,    setAppts]    = useState([]);
+  const [subs,     setSubs]     = useState([]);
+  const [expenses, setExpenses] = useState([]);
 
   // ── calendar ──
   const [weekOffset, setWeekOffset] = useState(0);
