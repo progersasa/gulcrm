@@ -122,11 +122,15 @@
       return {activatedAt: new Date().toISOString(), expiresAt: expiresAt.toISOString()};
     }
     // Use window variable as fallback if localStorage unavailable
-    // ТЕСТ: принудительно устанавливаем дату 31 день назад
-    const testDate = new Date();
-    testDate.setDate(testDate.getDate() - 31);
-    window._gulInstall = testDate.toISOString();
-    try { localStorage.setItem("gulcrm_install", window._gulInstall); } catch(e) {}
+    if (!window._gulInstall) {
+      try {
+        window._gulInstall = localStorage.getItem("gulcrm_install");
+        if (!window._gulInstall) {
+          window._gulInstall = new Date().toISOString();
+          try { localStorage.setItem("gulcrm_install", window._gulInstall); } catch(e) {}
+        }
+      } catch(e) { window._gulInstall = new Date().toISOString(); }
+    }
     function getInstallDate() {
       return new Date(window._gulInstall || new Date().toISOString());
     }
@@ -731,8 +735,8 @@ function App() {
     const deviceId = getDeviceId();
     const daysLeft = trialDaysLeft();
     const expired = !isTrialActive() && !checkLicense(license);
-    const CARD = "8600 1234 5678 9012"; // Замени на свой номер карты!
-    const TG   = "@your_telegram";       // Замени на свой Telegram!
+    const CARD = "9860 2601 1004 8832 · TIMUR JAKENOV";
+    const TG   = "@timenergy1";
 
     return (
       <div style={{position:"absolute",inset:0,background:bg,zIndex:200,
@@ -852,7 +856,14 @@ function App() {
                   <div style={{fontWeight:800,fontSize:15,color,letterSpacing:.5,
                     padding:"8px 12px",borderRadius:10,background:sf2,
                     fontFamily:"monospace",cursor:"pointer"}}
-                    onClick={()=>{navigator.clipboard?.writeText(value);showToast(lang==="uz"?"Nusxalandi!":"Скопировано!","📋");}}>
+                    onClick={()=>{
+                      if(value.startsWith("@")) {
+                        window.open("https://t.me/" + value.slice(1), "_blank");
+                      } else {
+                        navigator.clipboard?.writeText(value);
+                        showToast(lang==="uz"?"Nusxalandi!":"Скопировано!","📋");
+                      }
+                    }}>
                     {value}
                   </div>
                 </div>
