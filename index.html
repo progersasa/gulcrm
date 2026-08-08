@@ -122,14 +122,21 @@
       return {activatedAt: new Date().toISOString(), expiresAt: expiresAt.toISOString()};
     }
     // Use window variable as fallback if localStorage unavailable
-    if (!window._gulInstall) {
-      try {
-        window._gulInstall = localStorage.getItem("gulcrm_install");
-        if (!window._gulInstall) {
-          window._gulInstall = new Date().toISOString();
-          try { localStorage.setItem("gulcrm_install", window._gulInstall); } catch(e) {}
-        }
-      } catch(e) { window._gulInstall = new Date().toISOString(); }
+    const INSTALL_VER = "v1";
+    try {
+      const savedVer = localStorage.getItem("gulcrm_ver");
+      const savedDate = localStorage.getItem("gulcrm_install");
+      // Reset if version changed or date is invalid/too old
+      if (savedVer !== INSTALL_VER || !savedDate) {
+        const now = new Date().toISOString();
+        localStorage.setItem("gulcrm_install", now);
+        localStorage.setItem("gulcrm_ver", INSTALL_VER);
+        window._gulInstall = now;
+      } else {
+        window._gulInstall = savedDate;
+      }
+    } catch(e) {
+      window._gulInstall = new Date().toISOString();
     }
     function getInstallDate() {
       return new Date(window._gulInstall || new Date().toISOString());
@@ -771,7 +778,11 @@ function App() {
                 ID: {deviceId}
               </div>
             </div>
-            <button onClick={()=>setLicScreen(false)} style={{...priBtn,maxWidth:340,width:"100%"}}>
+            <button onClick={()=>setLicScreen(false)} style={{width:"100%",maxWidth:340,
+              height:56,borderRadius:18,border:"none",
+              background:"linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8)",
+              color:"#fff",fontSize:17,fontWeight:900,cursor:"pointer",
+              boxShadow:"0 8px 32px rgba(255,107,157,.4)",fontFamily:"inherit"}}>
               {lang==="uz"?"Davom etish →":"Продолжить →"}
             </button>
           </>
@@ -901,8 +912,12 @@ function App() {
               } else {
                 setLicError(lang==="uz"?"Noto'g'ri kod. Iltimos qaytadan tekshiring.":"Неверный код. Проверьте и попробуйте снова.");
               }
-            }} style={{...priBtn,maxWidth:340,width:"100%"}}>
-              {lang==="uz"?"Faollashtirish":"Активировать"}
+            }} style={{width:"100%",maxWidth:340,height:56,borderRadius:18,border:"none",
+              background:"linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8)",
+              color:"#fff",fontSize:17,fontWeight:900,cursor:"pointer",
+              boxShadow:"0 8px 32px rgba(255,107,157,.4)",
+              letterSpacing:.5,fontFamily:"inherit"}}>
+              🔑 {lang==="uz"?"Faollashtirish":"Активировать"}
             </button>
           </>
         ) : (
@@ -922,7 +937,11 @@ function App() {
                 ? "Bepul davr tugagach, oylik 50 000 so'mlik obuna kerak bo'ladi."
                 : "После пробного периода потребуется подписка 50 000 сум/месяц."}
             </div>
-            <button onClick={()=>setLicScreen(false)} style={{...priBtn,maxWidth:340,width:"100%"}}>
+            <button onClick={()=>setLicScreen(false)} style={{width:"100%",maxWidth:340,
+              height:56,borderRadius:18,border:"none",
+              background:"linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8)",
+              color:"#fff",fontSize:17,fontWeight:900,cursor:"pointer",
+              boxShadow:"0 8px 32px rgba(255,107,157,.4)",fontFamily:"inherit"}}>
               {lang==="uz"?"Davom etish →":"Продолжить →"}
             </button>
           </>
@@ -2284,12 +2303,8 @@ function App() {
           </div>
         </div>
         <div style={{flex:1, overflow:"hidden", position:"relative"}}>
-          {/* License / paywall overlay */}
-          {licScreen && screenLicense()}
-          {!licScreen && !checkLicense(license) && !isTrialActive() && (
-            // Auto-show paywall when trial expired
-            <div style={{position:"absolute",inset:0,zIndex:150}} ref={el=>{if(el)setLicScreen(true)}}/>
-          )}
+          {/* License screen - shown when clicked or trial expired */}
+          {(licScreen || (!checkLicense(license) && !isTrialActive())) && screenLicense()}
           <div style={{position:"absolute", inset:0, overflowY:"auto"}}>
             {screen === "dashboard" && screenDashboard()}
             {screen === "calendar"  && screenCalendar()}
