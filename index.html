@@ -1,0 +1,2337 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="GulCRM"/>
+  <meta name="theme-color" content="#0D0620"/>
+  <title>GulCRM — Beauty Master CRM</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0D0620;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+    #root{width:100%;min-height:100vh}
+    #loading{position:fixed;inset:0;background:#0D0620;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999;transition:opacity .6s}
+    .ld-logo{font-size:56px;animation:ldf 2s ease-in-out infinite}
+    .ld-name{font-size:28px;font-weight:900;background:linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px}
+    .ld-sub{font-size:13px;color:#7A5F8A}
+    .ld-spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(255,107,157,.2);border-top-color:#FF6B9D;animation:spin 1s linear infinite}
+    @keyframes ldf{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="ld-logo">🌸</div>
+    <div class="ld-name">GulCRM</div>
+    <div class="ld-sub">Beauty Master CRM</div>
+    <div class="ld-spin"></div>
+  </div>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useRef } = React;
+
+    // Inline SVG icons
+    function SvgIcon({ d, size=20, color='currentColor', strokeWidth=2, style }) {
+      const paths = d.split('M').filter(Boolean).map((p,i) =>
+        React.createElement('path', {key:i, d:'M'+p, strokeLinecap:'round', strokeLinejoin:'round'})
+      );
+      return React.createElement('svg', {
+        xmlns:'http://www.w3.org/2000/svg', width:size, height:size,
+        viewBox:'0 0 24 24', fill:'none', stroke:color, strokeWidth,
+        style:{display:'inline-flex',flexShrink:0,...(style||{})}
+      }, ...paths);
+    }
+    const Home = (p) => React.createElement(SvgIcon, {d:`M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10`,...p});
+    const Calendar = (p) => React.createElement(SvgIcon, {d:`M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z`,...p});
+    const Users = (p) => React.createElement(SvgIcon, {d:`M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75`,...p});
+    const Wallet = (p) => React.createElement(SvgIcon, {d:`M21 12V7H5a2 2 0 010-4h14v4M21 12v5H5a2 2 0 000 4h16v-5M21 12H7`,...p});
+    const Settings = (p) => React.createElement(SvgIcon, {d:`M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z`,...p});
+    const Plus = (p) => React.createElement(SvgIcon, {d:`M12 5v14M5 12h14`,...p});
+    const BarChart2 = (p) => React.createElement(SvgIcon, {d:`M18 20V10M12 20V4M6 20v-6`,...p});
+    const ChevronLeft = (p) => React.createElement(SvgIcon, {d:`M15 18l-6-6 6-6`,...p});
+    const ChevronRight = (p) => React.createElement(SvgIcon, {d:`M9 18l6-6-6-6`,...p});
+    const Search = (p) => React.createElement(SvgIcon, {d:`M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z`,...p});
+    const Phone = (p) => React.createElement(SvgIcon, {d:`M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 8.8a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z`,...p});
+    const Send = (p) => React.createElement(SvgIcon, {d:`M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z`,...p});
+    const MessageCircle = (p) => React.createElement(SvgIcon, {d:`M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z`,...p});
+
+
+    // ── LICENSE HELPERS ──────────────────────────────────────────────────────
+    function getDeviceId() {
+      const nav = window.navigator;
+      const raw = [nav.userAgent, nav.language, screen.width, screen.height,
+        nav.hardwareConcurrency, Intl.DateTimeFormat().resolvedOptions().timeZone].join('|');
+      let hash = 0;
+      for (let i = 0; i < raw.length; i++) {
+        hash = ((hash << 5) - hash) + raw.charCodeAt(i); hash |= 0;
+      }
+      return Math.abs(hash).toString(36).toUpperCase().slice(0, 8);
+    }
+    const SECRET = "GULCRM2024";
+
+    function generateCode(deviceId, months) {
+      const d = new Date();
+      d.setMonth(d.getMonth() + months);
+      const ym = d.getFullYear() * 100 + (d.getMonth() + 1);
+      const expCode = ym.toString(36).toUpperCase().padStart(4,'0');
+      const raw = deviceId.toUpperCase() + SECRET + expCode;
+      let h1 = 0x811c9dc5; let h2 = 0xdeadbeef;
+      for (let i = 0; i < raw.length; i++) {
+        h1 ^= raw.charCodeAt(i); h1 = Math.imul(h1, 0x01000193) >>> 0;
+        h2 ^= raw.charCodeAt(raw.length-1-i); h2 = Math.imul(h2, 0x9e3779b9) >>> 0;
+      }
+      const p1 = (h1>>>0).toString(36).toUpperCase().padStart(6,'0').slice(0,6);
+      const p3 = (h2>>>0).toString(36).toUpperCase().padStart(6,'0').slice(0,6);
+      return p1+"-"+expCode+"-"+p3;
+    }
+
+    function checkLicense(lic) {
+      if (!lic) return false;
+      return new Date(lic.expiresAt) > new Date();
+    }
+
+    function activateLicense(inputCode) {
+      const deviceId = getDeviceId();
+      const clean = inputCode.toUpperCase().replace(/[^A-Z0-9]/g,'');
+      if (clean.length < 14) return null;
+      const p1 = clean.slice(0,6);
+      const expCode = clean.slice(6,10);
+      const p3 = clean.slice(10,16);
+      // Decode expiry
+      const ym = parseInt(expCode, 36);
+      const year = Math.floor(ym/100);
+      const month = ym % 100;
+      if (year < 2024 || year > 2040 || month < 1 || month > 12) return null;
+      // Verify hash
+      const raw = deviceId.toUpperCase() + SECRET + expCode;
+      let h1 = 0x811c9dc5; let h2 = 0xdeadbeef;
+      for (let i = 0; i < raw.length; i++) {
+        h1 ^= raw.charCodeAt(i); h1 = Math.imul(h1, 0x01000193) >>> 0;
+        h2 ^= raw.charCodeAt(raw.length-1-i); h2 = Math.imul(h2, 0x9e3779b9) >>> 0;
+      }
+      const expP1 = (h1>>>0).toString(36).toUpperCase().padStart(6,'0').slice(0,6);
+      const expP3 = (h2>>>0).toString(36).toUpperCase().padStart(6,'0').slice(0,6);
+      if (p1 !== expP1 || p3 !== expP3) return null;
+      const expiresAt = new Date(year, month-1, 1);
+      return {activatedAt: new Date().toISOString(), expiresAt: expiresAt.toISOString()};
+    }
+    // Use window variable as fallback if localStorage unavailable
+    // ТЕСТ: принудительно устанавливаем дату 31 день назад
+    const testDate = new Date();
+    testDate.setDate(testDate.getDate() - 31);
+    window._gulInstall = testDate.toISOString();
+    try { localStorage.setItem("gulcrm_install", window._gulInstall); } catch(e) {}
+    function getInstallDate() {
+      return new Date(window._gulInstall || new Date().toISOString());
+    }
+    function isTrialActive() {
+      return (new Date() - getInstallDate()) < 30 * 24 * 60 * 60 * 1000;
+    }
+    function trialDaysLeft() {
+      const msLeft = 30*24*60*60*1000 - (new Date() - getInstallDate());
+      return Math.max(0, Math.ceil(msLeft / (24*60*60*1000)));
+    }
+
+
+
+
+
+// ─── PROFILES ────────────────────────────────────────────────────────────────
+const PROFILES = {
+  nail:    {emoji:"💅", ru:"Маникюр / педикюр",   uz:"Manikur / pedikur",
+    sru:["Маникюр классический","Маникюр + гель-лак","Педикюр классический","Педикюр + покрытие","Дизайн ногтей","Укрепление ногтей","Наращивание ногтей","Снятие покрытия"],
+    suz:["Klassik manikur","Manikur + gel-lak","Klassik pedikur","Pedikur + qoplama","Tirnoq dizayni","Mustahkamlash","Tirnoq o'stirish","Qoplamani olish"],
+    p:[150000,250000,200000,300000,80000,120000,350000,50000]},
+  cosmo:   {emoji:"✨", ru:"Косметолог",            uz:"Kosmetolog",
+    sru:["Чистка лица (ручная)","Чистка (аппаратная)","Химический пилинг","Мезотерапия","Биоревитализация","Микродермабразия","Маска для лица","Ботокс / Диспорт"],
+    suz:["Yuz tozalash (qo'l)","Yuz tozalash (apparat)","Kimyoviy pilinq","Mezoterapiya","Biorevitalizatsiya","Mikrodermabraziya","Yuz niqobi","Botoks"],
+    p:[200000,350000,300000,500000,600000,400000,80000,800000]},
+  brow:    {emoji:"🤨", ru:"Бровист",              uz:"Qoshchi",
+    sru:["Коррекция формы","Окрашивание бровей","Ламинирование","Архитектура бровей","Татуаж (пудровый)","Татуаж (волосковый)","Хна-брови","Оформление + окраска"],
+    suz:["Shaklni tuzatish","Qoshni bo'yash","Laminatsiya","Qosh arxitekturasi","Tatuaj (pudra)","Tatuaj (soch)","Xina-qosh","Bezash + bo'yash"],
+    p:[80000,60000,200000,150000,1500000,1800000,70000,120000]},
+  lash:    {emoji:"👁️", ru:"Лешмейкер",            uz:"Kirpikchi",
+    sru:["Наращивание (классика)","Наращивание 2D/3D","Наращивание 5D/6D","Снятие ресниц","Ламинирование","Тонирование","Биозавивка","Эффект лисы"],
+    suz:["O'stirish (klassik)","O'stirish 2D/3D","O'stirish 5D/6D","Kirpikni olish","Laminatsiya","Bo'yash","Bio-jingalak","Tulki effekti"],
+    p:[300000,400000,600000,100000,250000,80000,200000,500000]},
+  stylist: {emoji:"💇", ru:"Стилист / парикмахер", uz:"Sartarosh-stilist",
+    sru:["Стрижка женская","Стрижка мужская","Окрашивание","Балаяж","Кератин","Укладка","Ботокс волос","Наращивание"],
+    suz:["Ayollar kesish","Erkaklar kesish","Bo'yash","Balyaj","Keratin","Ukladka","Soch botoksi","Uzaytirish"],
+    p:[150000,100000,400000,600000,800000,120000,500000,1500000]},
+  depil:   {emoji:"🪒", ru:"Депиляция",            uz:"Depilatsiya",
+    sru:["Шугаринг ноги","Шугаринг бикини","Глубокое бикини","Подмышки","Восковая депиляция","Лазерная (зона)","Фотоэпиляция","Верхняя губа"],
+    suz:["Shuqaring oyoqlar","Shuqaring bikini","Chuqur bikini","Qo'ltiq","Mum depilatsiyasi","Lazer (zona)","Fotoepilatsiya","Yuqori lab"],
+    p:[200000,150000,250000,80000,180000,300000,280000,50000]},
+  massage: {emoji:"💆", ru:"Массажист",            uz:"Massajchi",
+    sru:["Общий массаж","Массаж спины","Шея / воротниковая","Антицеллюлитный","Лимфодренажный","Массаж лица","Стоун-терапия","Релаксирующий"],
+    suz:["Umumiy massaj","Orqa massaji","Bo'yin va yoqa","Selülit massaji","Limfodrenaj","Yuz massaji","Tosh terapiyasi","Relaksatsiya"],
+    p:[350000,200000,150000,300000,400000,100000,450000,320000]},
+  makeup:  {emoji:"💄", ru:"Визажист",             uz:"Vizajist",
+    sru:["Дневной макияж","Вечерний макияж","Свадебный","Smoky Eyes","Нюдовый","Макияж с обучением","Перманент губ","Перманент стрелки"],
+    suz:["Kungi makiyaj","Kechki makiyaj","To'y makiyaji","Smoky Eyes","Nyu makiyaj","O'qitish bilan","Doimiy (lab)","Doimiy (ko'z)"],
+    p:[200000,300000,500000,350000,250000,600000,2000000,1800000]},
+};
+
+// ─── CURRENCY ────────────────────────────────────────────────────────────────
+const CURR = {
+  uzs:{sym:"сум", sym_uz:"so'm", rate:1},
+  rub:{sym:"₽",   sym_uz:"₽",   rate:0.0082},
+  usd:{sym:"$",   sym_uz:"$",   rate:0.000079},
+};
+function fmtP(uzs, cur, lang) {
+  const c = CURR[cur];
+  const v = Math.round(uzs * c.rate);
+  if (cur === "usd") return "$" + v.toFixed(0);
+  return v.toLocaleString("ru") + " " + (lang === "uz" ? c.sym_uz : c.sym);
+}
+
+// ─── DATE HELPERS ────────────────────────────────────────────────────────────
+const DR = ["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const DU = ["Yak","Du","Se","Ch","Pa","Ju","Sha"];
+const MR = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const MRN = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const MU = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
+const HOURS = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"];
+
+function dkey(d) {
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function fmtDate(s, lang) {
+  const parts = s.split("-");
+  return parts[2].replace(/^0/,"") + " " + (lang==="uz" ? MU : MR)[+parts[1]-1];
+}
+
+// ─── DEMO DATA ───────────────────────────────────────────────────────────────
+const NOW = new Date();
+const TK  = dkey(NOW);
+const YD  = new Date(NOW); YD.setDate(NOW.getDate()-1); const YK = dkey(YD);
+const TM  = new Date(NOW); TM.setDate(NOW.getDate()+1); const TMK = dkey(TM);
+
+const DEMO_CL = [
+  {id:1, name:"Дилноза Юсупова",  name_uz:"Dilnoza Yusupova",  av:"Д", avc:"p", phone:"+998 90 123 45 67", birthday:"1995-03-14", note:"⚠️ Аллергия на краску"},
+  {id:2, name:"Камола Рашидова",  name_uz:"Kamola Rashidova",  av:"К", avc:"g", phone:"+998 90 234 56 78", birthday:"1992-07-22", note:""},
+  {id:3, name:"Азиза Хамидова",   name_uz:"Aziza Hamidova",    av:"А", avc:"a", phone:"+998 90 345 67 89", birthday:"1998-11-05", note:"Предпочитает пастельные тона"},
+  {id:4, name:"Нилуфар Каримова", name_uz:"Nilufar Karimova",  av:"Н", avc:"r", phone:"+998 90 456 78 90", birthday:"1990-01-30", note:""},
+  {id:5, name:"Барно Тошматова",  name_uz:"Barno Toshmatova",  av:"Б", avc:"b", phone:"+998 90 567 89 01", birthday:"1988-09-18", note:""},
+  {id:6, name:"Феруза Мирзаева",  name_uz:"Feruza Mirzayeva",  av:"Ф", avc:"t", phone:"+998 90 678 90 12", birthday:"2000-06-02", note:""},
+];
+
+const DEMO_AP = [
+  {id:101, dateKey:TK,  time:"10:00", clientId:1, clientName:"Дилноза Юсупова",  clientName_uz:"Dilnoza Yusupova",  svc:"Маникюр + гель-лак",     svc_uz:"Manikur + gel-lak",    status:"debt", priceUzs:250000, dur:90},
+  {id:102, dateKey:TK,  time:"12:00", clientId:2, clientName:"Камола Рашидова",  clientName_uz:"Kamola Rashidova",  svc:"Педикюр классический",   svc_uz:"Klassik pedikur",      status:"paid", priceUzs:200000, dur:60},
+  {id:103, dateKey:TK,  time:"14:00", clientId:3, clientName:"Азиза Хамидова",   clientName_uz:"Aziza Hamidova",    svc:"Маникюр + гель-лак",     svc_uz:"Manikur + gel-lak",    status:"sub",  priceUzs:0,      dur:90},
+  {id:104, dateKey:TK,  time:"16:30", clientId:4, clientName:"Нилуфар Каримова", clientName_uz:"Nilufar Karimova",  svc:"Дизайн ногтей",          svc_uz:"Tirnoq dizayni",       status:"debt", priceUzs:215000, dur:60},
+  {id:105, dateKey:YK,  time:"11:00", clientId:5, clientName:"Барно Тошматова",  clientName_uz:"Barno Toshmatova",  svc:"Педикюр + покрытие",     svc_uz:"Pedikur + qoplama",    status:"paid", priceUzs:300000, dur:90},
+  {id:106, dateKey:YK,  time:"15:00", clientId:6, clientName:"Феруза Мирзаева",  clientName_uz:"Feruza Mirzayeva",  svc:"Маникюр классический",   svc_uz:"Klassik manikur",      status:"paid", priceUzs:150000, dur:60},
+  {id:107, dateKey:TMK, time:"10:30", clientId:1, clientName:"Дилноза Юсупова",  clientName_uz:"Dilnoza Yusupova",  svc:"Маникюр + гель-лак",     svc_uz:"Manikur + gel-lak",    status:"paid", priceUzs:250000, dur:90},
+];
+
+const DEMO_SB = [
+  {id:1, clientId:3, clientName:"Азиза Хамидова",  clientName_uz:"Aziza Hamidova",  av:"А", avc:"a", svc:"Маникюр + гель-лак",   svc_uz:"Manikur + gel-lak",  used:6, total:10, priceUzs:2000000},
+  {id:2, clientId:5, clientName:"Барно Тошматова", clientName_uz:"Barno Toshmatova", av:"Б", avc:"b", svc:"Педикюр классический", svc_uz:"Klassik pedikur",    used:3, total:8,  priceUzs:1400000},
+  {id:3, clientId:2, clientName:"Камола Рашидова", clientName_uz:"Kamola Rashidova", av:"К", avc:"g", svc:"Коррекция формы",     svc_uz:"Shaklni tuzatish",   used:1, total:5,  priceUzs:350000},
+];
+
+const EXP_CATS = [
+  {id:"materials", emoji:"🧴", ru:"Материалы",   uz:"Materiallar"},
+  {id:"rent",      emoji:"🏠", ru:"Аренда",      uz:"Ijara"},
+  {id:"tools",     emoji:"✂️", ru:"Инструменты", uz:"Asboblar"},
+  {id:"transport", emoji:"🚗", ru:"Транспорт",   uz:"Transport"},
+  {id:"marketing", emoji:"📣", ru:"Реклама",     uz:"Reklama"},
+  {id:"salary",    emoji:"👩", ru:"Зарплата",    uz:"Maosh"},
+  {id:"other",     emoji:"📦", ru:"Другое",      uz:"Boshqa"},
+];
+
+const DEMO_EX = [
+  {id:201, dateKey:TK,  catId:"materials", desc:"Гель-лаки OPI (10 шт)",  amtUzs:450000},
+  {id:202, dateKey:TK,  catId:"rent",      desc:"Аренда за месяц",         amtUzs:800000},
+  {id:203, dateKey:YK,  catId:"materials", desc:"Пилки и бафы",            amtUzs:85000},
+  {id:204, dateKey:YK,  catId:"tools",     desc:"Лампа для полимеризации", amtUzs:320000},
+  {id:205, dateKey:TMK, catId:"marketing", desc:"Реклама в Instagram",     amtUzs:150000},
+];
+
+// ─── AVATAR COLORS ────────────────────────────────────────────────────────────
+const AVC = {
+  p:"linear-gradient(135deg,#FF6B9D,#FF8DC7)",
+  g:"linear-gradient(135deg,#10B981,#34D399)",
+  a:"linear-gradient(135deg,#FFD166,#F59E0B)",
+  r:"linear-gradient(135deg,#FB923C,#F97316)",
+  b:"linear-gradient(135deg,#3B82F6,#60A5FA)",
+  t:"linear-gradient(135deg,#14B8A6,#2DD4BF)",
+};
+const AVCL = ["p","g","a","r","b","t"];
+
+const STC = {
+  paid:    ["rgba(52,211,153,.12)", "#34D399", "rgba(52,211,153,.25)"],
+  debt:    ["rgba(251,146,60,.12)", "#FB923C", "rgba(251,146,60,.25)"],
+  sub:     ["rgba(255,107,157,.12)", "#C084FC", "rgba(255,107,157,.25)"],
+  pending: ["rgba(148,163,184,.1)", "#94A3B8", "rgba(100,116,139,.2)"],
+};
+
+// ─── SMALL COMPONENTS ────────────────────────────────────────────────────────
+function Av({l, c, sz=44}) {
+  return (
+    <div style={{width:sz, height:sz, borderRadius:"50%", background:AVC[c]||AVC.p,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      color:"#fff", fontWeight:800, fontSize:sz*.38, flexShrink:0}}>
+      {l}
+    </div>
+  );
+}
+
+function Bdg({type, text}) {
+  const s = STC[type] || STC.paid;
+  return (
+    <span style={{fontSize:10, fontWeight:700, padding:"3px 9px", borderRadius:20,
+      background:s[0], color:s[1], whiteSpace:"nowrap"}}>
+      {text}
+    </span>
+  );
+}
+
+function Modal({open, onClose, children, isDark=true}) {
+  if (!open) return null;
+  const bg = isDark ? "#1C1035" : "#FFFFFF";
+  const bd = isDark ? "rgba(255,107,157,.12)" : "rgba(192,84,252,.1)";
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{position:"absolute", inset:0, background:"rgba(0,0,0,.82)", zIndex:300,
+        backdropFilter:"blur(18px)", display:"flex", alignItems:"flex-end"}}>
+      <div style={{width:"100%", background:bg, borderRadius:"24px 24px 0 0",
+        padding:"16px 18px 30px", animation:"slideUp .3s ease-out",
+        maxHeight:"90%", overflowY:"auto", border:"1px solid "+bd, borderBottom:"none"}}>
+        <div style={{width:40, height:4, borderRadius:2, margin:"0 auto 16px", background:"linear-gradient(90deg,#FF6B9D,#C084FC)"}} />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Toast({msg, icon, isDark=true}) {
+  return (
+    <div style={{position:"absolute", top:14, left:16, right:16,
+      background:"linear-gradient(135deg,rgba(255,107,157,.15),rgba(192,132,252,.1))",
+      backdropFilter:"blur(20px)",
+      border:"1px solid rgba(255,107,157,.3)", borderRadius:18,
+      padding:"12px 16px", display:"flex", alignItems:"center", gap:10,
+      boxShadow:"0 8px 32px rgba(255,107,157,.25)", zIndex:500,
+      animation:"slideDown .4s cubic-bezier(.34,1.56,.64,1)"}}>
+      <span style={{fontSize:20}}>{icon}</span>
+      <span style={{fontSize:13, fontWeight:700, color:"#FFF0F8"}}>{msg}</span>
+    </div>
+  );
+}
+
+// ─── SERVICE BUILDER ─────────────────────────────────────────────────────────
+function buildServices(profileKey) {
+  const p = PROFILES[profileKey];
+  return p.sru.map((name, i) => ({
+    id: i+1,
+    name,
+    nameUz: p.suz[i],
+    price: p.p[i],
+    dur: 60,
+  }));
+}
+
+// ─── MAIN APP ─────────────────────────────────────────────────────────────────
+function App() {
+
+  // ── settings & ui state ──
+  const [step,       setStep]       = useState("onboarding");
+  const [profile,    setProfile]    = useState("nail");
+  const [license,    setLicense]    = useState(null); // {activatedAt, expiresAt, code}
+  const [licScreen,  setLicScreen]  = useState(false);
+  const [licInput,   setLicInput]   = useState("");
+  const [licError,   setLicError]   = useState("");
+  const [currency,   setCurrency]   = useState("uzs");
+  const [lang,       setLang]       = useState("ru");
+  const [dark,       setDark]       = useState(false);
+  const [screen,     setScreen]     = useState("dashboard");
+  const [toast,      setToast]      = useState(null);
+  const [modal,      setModal]      = useState(null);
+
+  // ── data ──
+  const [clients,  setClients]  = useState(DEMO_CL);
+  const [appts,    setAppts]    = useState(DEMO_AP);
+  const [subs,     setSubs]     = useState(DEMO_SB);
+  const [expenses, setExpenses] = useState(DEMO_EX);
+
+  // ── calendar ──
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [selDay,     setSelDay]     = useState(new Date());
+
+  // ── work config ──
+  const [workCfg, setWorkCfg] = useState({start:"09:00", end:"20:00", offDays:[0]});
+
+  // ── modal state ──
+  const [editAppt,   setEditAppt]   = useState(null);
+  const [selClient,  setSelClient]  = useState(null);
+  const [tgMsg,      setTgMsg]      = useState("");
+  const [finTab,     setFinTab]     = useState("debt");
+  const [statPeriod, setStatPeriod] = useState(0);
+  const [statTab,    setStatTab]    = useState("overview");
+  const [clFilter,   setClFilter]   = useState("");
+  const [syncing,    setSyncing]    = useState(false);
+  const [confirmDup, setConfirmDup] = useState(false);
+  const [apptStep,   setApptStep]   = useState(1);
+  const [mktPrev,    setMktPrev]    = useState(null);
+  const [closeAppt,  setCloseAppt]  = useState(null);
+  const [myServices, setMyServices] = useState(() => buildServices("nail"));
+  const [editSvc,    setEditSvc]    = useState(null); // запись которую закрываем
+
+  // ── Авто-попап закрытия: проверяем каждые 30 сек ──
+  useEffect(() => {
+    function checkPending() {
+      if (modal) return; // не перебивать открытый попап
+      const now = new Date();
+      const todayKey2 = dkey(now);
+      const nowMin2 = now.getHours()*60 + now.getMinutes();
+      // Ищем первую запись с pending статусом у которой время уже прошло
+      const pending = appts.find(a => {
+        if (a.status !== "pending") return false;
+        if (a.dateKey !== todayKey2) return false; // только сегодня
+        const [hh,mm] = a.time.split(":").map(Number);
+        return hh*60 + mm + (a.dur||60) <= nowMin2; // запись закончилась
+      });
+      if (pending) {
+        setCloseAppt(pending);
+        setModal("close_appt");
+      }
+    }
+    checkPending();
+    const timer = setInterval(checkPending, 30000);
+    return () => clearInterval(timer);
+  }, [appts, modal]);
+
+  // ── forms ──
+  const [form,    setForm]    = useState({clientId:"", svc:"", priceUzs:"", date:"", time:"10:00", dur:90, status:"paid"});
+  const [clForm,  setClForm]  = useState({name:"", phone:"", birthday:"", note:""});
+  const [expForm, setExpForm] = useState({catId:"materials", desc:"", amtUzs:"", date:""});
+
+  // ── storage (localStorage) ──
+  const saveRef = useRef(null);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("bp6");
+      if (!saved) return;
+      const s = JSON.parse(saved);
+        if (s.profile)   setProfile(s.profile);
+        if (s.currency)  setCurrency(s.currency);
+        if (s.lang)      setLang(s.lang);
+        if (s.dark!=null) setDark(s.dark);
+        if (s.clients)   setClients(s.clients);
+        if (s.appts)     setAppts(s.appts);
+        if (s.subs)      setSubs(s.subs);
+        if (s.expenses)  setExpenses(s.expenses);
+        if (s.workCfg)   setWorkCfg(s.workCfg);
+        if (s.myServices) setMyServices(s.myServices);
+        else if (s.profile) setMyServices(buildServices(s.profile));
+        if (s.done)       setStep("app");
+    } catch(e) {}
+  }, []);
+
+  useEffect(() => {
+    if (step !== "app") return;
+    clearTimeout(saveRef.current);
+    saveRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem("bp6", JSON.stringify({
+          done:true, profile, currency, lang, dark,
+          clients, appts, subs, expenses, workCfg, myServices, license
+        }));
+      } catch(e) {}
+    }, 800);
+  }, [step, profile, currency, lang, dark, clients, appts, subs, expenses, workCfg, myServices, license]);
+
+  // Пересобираем услуги при смене профессии
+  const prevProfileRef = useRef(null);
+  useEffect(() => {
+    if (prevProfileRef.current !== null && prevProfileRef.current !== profile) {
+      setMyServices(buildServices(profile));
+    }
+    prevProfileRef.current = profile;
+  }, [profile]);
+
+  // ── derived ──
+  const pr  = PROFILES[profile];
+  const fp  = (uzs) => fmtP(uzs, currency, lang);
+
+  // Используем myServices вместо захардкоженных pr.sru/p
+  const svcs      = myServices.map(s => lang==="uz" ? s.nameUz : s.name);
+  const svcPrices = myServices.map(s => s.price);
+  const svcDurs   = myServices.map(s => s.dur);
+
+  const todayD = new Date(); todayD.setHours(0,0,0,0);
+  const todayK = dkey(todayD);
+  const selKey = dkey(selDay);
+
+  const weekStart = new Date(todayD);
+  const dow = todayD.getDay();
+  weekStart.setDate(todayD.getDate() - (dow === 0 ? 6 : dow - 1) + weekOffset * 7);
+  const weekDays = Array.from({length:7}, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+
+  const dayAppts = appts.filter(a => a.dateKey === selKey).sort((a,b) => a.time.localeCompare(b.time));
+  const isPast   = selKey < todayK;
+  const isToday  = selKey === todayK;
+  const isOff    = workCfg.offDays.includes(selDay.getDay());
+  const workHours = HOURS.filter(h => h >= workCfg.start && h <= workCfg.end);
+
+  function canAdd(h) {
+    if (isPast) return false;
+    if (!isToday) return true;
+    const [hh, mm] = h.split(":").map(Number);
+    const now = new Date();
+    return hh * 60 + mm > now.getHours() * 60 + now.getMinutes();
+  }
+  const canAddAny = !isPast && (!isToday || workHours.some(h => canAdd(h)));
+
+  const debtors   = clients.map(c => ({
+    ...c,
+    debtUzs: appts.filter(a => a.clientId === c.id && a.status === "debt").reduce((s,a) => s + a.priceUzs, 0)
+  })).filter(c => c.debtUzs > 0);
+  const totalDebt = debtors.reduce((s,c) => s + c.debtUzs, 0);
+
+  // stat helpers
+  function periodKeys(n) {
+    const ks = new Set();
+    const now = new Date(); now.setHours(0,0,0,0);
+    for (let i = 0; i < n; i++) {
+      const d = new Date(now); d.setDate(now.getDate() - i); ks.add(dkey(d));
+    }
+    return ks;
+  }
+  const statN = statPeriod === 0 ? 1 : statPeriod === 1 ? 7 : 30;
+  const statKeys  = periodKeys(statN);
+  const statAppts = appts.filter(a => statKeys.has(a.dateKey) && a.status !== "debt");
+  const statExps  = expenses.filter(e => statKeys.has(e.dateKey));
+  const revenue   = statAppts.reduce((s,a) => s + a.priceUzs, 0);
+  const totalExp  = statExps.reduce((s,e) => s + e.amtUzs, 0);
+  const profit    = revenue - totalExp;
+
+  // ── helpers ──
+  function showToast(msg, icon) {
+    setToast({msg, icon: icon||"✅"});
+    setTimeout(() => setToast(null), 2500);
+  }
+
+  function dayLabel() {
+    if (selKey === todayK) return lang === "uz" ? "Bugun" : "Сегодня";
+    const yd = new Date(todayD); yd.setDate(todayD.getDate()-1);
+    const tm = new Date(todayD); tm.setDate(todayD.getDate()+1);
+    if (selKey === dkey(yd)) return lang === "uz" ? "Kecha" : "Вчера";
+    if (selKey === dkey(tm)) return lang === "uz" ? "Ertaga" : "Завтра";
+    return fmtDate(selKey, lang);
+  }
+
+  function openAdd(time) {
+    const t = time || "10:00";
+    setForm({
+      clientId: clients[0]?.id || "",
+      svc: svcs[0] || "",
+      priceUzs: String(svcPrices[0] || 0),
+      date: selKey,
+      time: t,
+      dur: svcDurs[0] || 60,
+      status: "pending"
+    });
+    setEditAppt(null);
+    setApptStep(1);
+    setConfirmDup(false);
+    setModal("appt");
+  }
+
+  function openEdit(a) {
+    setForm({clientId:a.clientId, svc:a.svc, priceUzs:String(a.priceUzs), date:a.dateKey, time:a.time, dur:a.dur, status:a.status});
+    setEditAppt(a);
+    setApptStep(1);
+    setConfirmDup(false);
+    setModal("appt");
+  }
+
+  function saveAppt() {
+    if (!form.clientId || !form.svc || !form.date || !form.time) {
+      showToast(lang==="uz"?"Barcha maydonlarni to'ldiring":"Заполните все поля", "⚠️"); return;
+    }
+    if (!editAppt) {
+      if (form.date < todayK) { showToast(lang==="uz"?"O'tgan sanaga yozib bo'lmaydi":"Нельзя записать в прошлое","⛔"); return; }
+      if (form.date === todayK) {
+        const [hh,mm] = form.time.split(":").map(Number);
+        const now = new Date();
+        if (hh*60+mm <= now.getHours()*60+now.getMinutes()) {
+          showToast(lang==="uz"?"Bu vaqt o'tib ketdi":"Это время уже прошло","⛔"); return;
+        }
+      }
+    }
+
+    // ── Проверка конфликтов ──
+    const newStart = (() => { const [h,m]=form.time.split(":").map(Number); return h*60+m; })();
+    const newEnd   = newStart + (+form.dur || 60);
+    const daySlots = appts.filter(a => a.dateKey === form.date && (!editAppt || a.id !== editAppt.id));
+
+    for (const a of daySlots) {
+      const aStart = (() => { const [h,m]=a.time.split(":").map(Number); return h*60+m; })();
+      const aEnd   = aStart + (a.dur || 60);
+      // перекрытие: новая запись начинается до конца существующей И заканчивается после начала существующей
+      if (newStart < aEnd && newEnd > aStart) {
+        const who  = lang==="uz" ? a.clientName_uz : a.clientName;
+        const msg  = lang==="uz"
+          ? `${a.time} — ${who} yozuvi bilan to'qnashadi!`
+          : `${a.time} — конфликт с записью клиента ${who}!`;
+        showToast(msg, "⛔"); return;
+      }
+    }
+
+    // Предупреждение: клиент уже записан в этот день
+    const cl = clients.find(c => c.id === +form.clientId) || clients[0];
+    const alreadyToday = daySlots.filter(a => a.clientId === cl.id);
+    // Предупреждение: клиент уже записан в этот день (предупреждаем один раз)
+    if (alreadyToday.length > 0 && !confirmDup) {
+      const times = alreadyToday.map(a => a.time).join(", ");
+      showToast(
+        lang==="uz"
+          ? `⚠️ ${cl.name_uz} bugun ${times} da yozilgan. Davom etish uchun qaytadan bosing.`
+          : `⚠️ ${cl.name} уже записан(а) в ${times}. Нажмите ещё раз для подтверждения.`,
+        "⚠️"
+      );
+      setConfirmDup(true);
+      return;
+    }
+    setConfirmDup(false);
+
+    const si = svcs.indexOf(form.svc);
+    const svcRu  = myServices[si]?.name    || form.svc;
+    const svcUz  = myServices[si]?.nameUz  || form.svc;
+    if (editAppt) {
+      setAppts(prev => prev.map(a => a.id === editAppt.id
+        ? {...a, dateKey:form.date, time:form.time, clientId:cl.id,
+            clientName:cl.name, clientName_uz:cl.name_uz,
+            svc:svcRu, svc_uz:svcUz,
+            priceUzs:+form.priceUzs, dur:+form.dur, status:form.status}
+        : a));
+      showToast(lang==="uz"?"Yozuv yangilandi!":"Запись обновлена!", "✏️");
+    } else {
+      setAppts(prev => [...prev, {
+        id: Date.now(), dateKey:form.date, time:form.time,
+        clientId:cl.id, clientName:cl.name, clientName_uz:cl.name_uz,
+        svc:svcRu, svc_uz:svcUz,
+        priceUzs:+form.priceUzs, dur:+form.dur, status:form.status
+      }]);
+      showToast(lang==="uz"?"Yozuv qo'shildi!":"Запись добавлена!", "✅");
+    }
+    setModal(null);
+  }
+
+  function saveClient() {
+    if (!clForm.name.trim()) { showToast(lang==="uz"?"Ism kiriting":"Введите имя","⚠️"); return; }
+    const id = Date.now();
+    setClients(prev => [...prev, {
+      id, name:clForm.name.trim(), name_uz:clForm.name.trim(),
+      av: clForm.name.trim()[0].toUpperCase(),
+      avc: AVCL[prev.length % AVCL.length],
+      phone:clForm.phone, birthday:clForm.birthday, note:clForm.note
+    }]);
+    setClForm({name:"", phone:"", birthday:"", note:""});
+    showToast(lang==="uz"?"Mijoz qo'shildi!":"Клиент добавлен!", "👤");
+    setModal(null);
+  }
+
+  function saveExp() {
+    if (!expForm.desc.trim() || !expForm.amtUzs || !expForm.date) {
+      showToast(lang==="uz"?"Barcha maydonlarni to'ldiring":"Заполните все поля","⚠️"); return;
+    }
+    setExpenses(prev => [...prev, {
+      id:Date.now(), dateKey:expForm.date, catId:expForm.catId,
+      desc:expForm.desc, amtUzs:+expForm.amtUzs
+    }]);
+    showToast(lang==="uz"?"Xarajat qo'shildi!":"Расход добавлен!","💸");
+    setModal(null);
+  }
+
+  // ── css vars (inline style on root) ──
+  // ── DESIGN TOKENS ──────────────────────────────────────────────────────────
+  const bg  = dark ? "#0D0620"  : "#FFF5FB";
+  const sf  = dark ? "#1C1035"  : "#FFFFFF";
+  const sf2 = dark ? "#241540"  : "#F8EEFF";
+  const bd  = dark ? "rgba(255,107,157,.12)" : "rgba(192,84,252,.12)";
+  const tx  = dark ? "#FFF0F8"  : "#1A0A2E";
+  const tx2 = dark ? "#C4A8D4"  : "#6B4080";
+  const tx3 = dark ? "#7A5F8A"  : "#A880C0";
+  const cg  = dark ? "#1C1035"  : "#FFFFFF";
+  const cb  = dark ? "rgba(255,107,157,.12)" : "rgba(192,84,252,.1)";
+  const acc  = dark ? "#FF6B9D" : "#E0409A";
+  const acc2 = dark ? "#C084FC" : "#9B59D0";
+  const grad  = "linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8)";
+  const glow  = dark
+    ? "0 0 24px rgba(255,107,157,.22),0 8px 28px rgba(192,132,252,.18)"
+    : "0 0 16px rgba(224,64,154,.12),0 8px 20px rgba(155,89,208,.08)";
+
+  const card = {background:cg, borderRadius:22, border:"1px solid "+cb,
+    boxShadow:dark?"0 4px 24px rgba(0,0,0,.4)":"0 2px 16px rgba(192,84,252,.07)"};
+  const inp  = {width:"100%", height:48, borderRadius:14, border:"1.5px solid "+bd, background:sf2, color:tx, fontSize:14, padding:"0 16px", outline:"none", fontFamily:"inherit"};
+  const priBtn = {width:"100%", height:52, borderRadius:18, border:"none", background:grad, color:"#fff", fontSize:15, fontWeight:800, cursor:"pointer", boxShadow:glow, fontFamily:"inherit"};
+  const secBtn = {width:"100%", height:46, borderRadius:14, border:"1.5px solid "+bd, background:sf2, color:tx2, fontSize:14, fontWeight:600, cursor:"pointer", marginTop:8, fontFamily:"inherit"};
+  const danBtn = {width:"100%", height:46, borderRadius:14, border:"1.5px solid rgba(251,113,133,.3)", background:"rgba(251,113,133,.08)", color:"#FB7185", fontSize:14, fontWeight:600, cursor:"pointer", marginTop:4, fontFamily:"inherit"};
+
+  // ── ONBOARDING ────────────────────────────────────────────────────────────
+  if (step === "onboarding") {
+    return (
+      <div style={{minHeight:"100vh", background:dark?"#0D0620":"#FFF5FB", display:"flex", alignItems:"center", justifyContent:"center", padding:16}}>
+        
+        <div style={{width:"100%", maxWidth:460, background:cg, borderRadius:28, overflow:"hidden", boxShadow:"0 20px 60px rgba(0,0,0,.3)"}}>
+          <div style={{padding:"28px 22px 18px", textAlign:"center", background:"linear-gradient(135deg,rgba(192,132,252,.15),rgba(129,140,248,.08))"}}>
+            <div style={{fontSize:36, marginBottom:6}}>✦</div>
+            <div style={{fontWeight:800, fontSize:24, background:"linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8)", backgroundSize:"200%", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", marginBottom:8, animation:"shimmer 3s linear infinite"}}>GulCRM</div>
+            <div style={{fontSize:13, color:tx2, lineHeight:1.6}}>{lang==="ru"?"Умный CRM для beauty-мастеров":"Beauty ustalari uchun aqlli CRM"}</div>
+            <div style={{display:"flex", justifyContent:"center", gap:8, marginTop:12}}>
+              {["ru","uz"].map(l => (
+                <button key={l} onClick={() => setLang(l)} style={{padding:"5px 16px", borderRadius:20, border:`2px solid ${lang===l?acc:bd}`, background:lang===l?"rgba(255,107,157,.12)":"transparent", color:lang===l?acc:tx2, fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"inherit"}}>{l.toUpperCase()}</button>
+              ))}
+              <button onClick={() => setDark(d => !d)} style={{padding:"5px 12px", borderRadius:20, border:`2px solid ${bd}`, background:"transparent", cursor:"pointer", fontSize:13, fontFamily:"inherit"}}>{dark?"☀️":"🌙"}</button>
+            </div>
+          </div>
+          <div style={{padding:"18px 18px 0"}}>
+            <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:10, textTransform:"uppercase"}}>{lang==="ru"?"Выберите направление":"Yo'nalishingizni tanlang"}</div>
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:18}}>
+              {Object.entries(PROFILES).map(([k,p]) => (
+                <button key={k} onClick={() => setProfile(k)} style={{borderRadius:14, border:`2px solid ${profile===k?"#FF6B9D":bd}`, background:profile===k?"rgba(255,107,157,.1)":bg, padding:"11px 8px", textAlign:"center", cursor:"pointer", fontFamily:"inherit"}}>
+                  <div style={{fontSize:24, marginBottom:4}}>{p.emoji}</div>
+                  <div style={{fontSize:11, fontWeight:700, color:profile===k?acc2:tx, lineHeight:1.3}}>{lang==="uz"?p.uz:p.ru}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:10, textTransform:"uppercase"}}>{lang==="ru"?"Валюта":"Valyuta"}</div>
+            <div style={{display:"flex", gap:9, marginBottom:22}}>
+              {[{k:"uzs",s:"so'm"},{k:"rub",s:"₽"},{k:"usd",s:"$"}].map(c => (
+                <button key={c.k} onClick={() => setCurrency(c.k)} style={{flex:1, height:54, borderRadius:13, border:`2px solid ${currency===c.k?"#FF6B9D":bd}`, background:currency===c.k?"rgba(255,107,157,.1)":bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2, cursor:"pointer", fontFamily:"inherit"}}>
+                  <div style={{fontSize:19, fontWeight:800, color:currency===c.k?acc2:tx}}>{c.s}</div>
+                  <div style={{fontSize:10, color:tx3, fontWeight:600}}>{c.k.toUpperCase()}</div>
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setStep("app")} style={{...priBtn, marginBottom:22}}>{lang==="ru"?"Начать работу →":"Ishni boshlash →"}</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── LICENSE SCREEN ──────────────────────────────────────────────────────────
+  function screenLicense() {
+    const deviceId = getDeviceId();
+    const daysLeft = trialDaysLeft();
+    const expired = !isTrialActive() && !checkLicense(license);
+    const CARD = "8600 1234 5678 9012"; // Замени на свой номер карты!
+    const TG   = "@your_telegram";       // Замени на свой Telegram!
+
+    return (
+      <div style={{position:"absolute",inset:0,background:bg,zIndex:200,
+        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+        padding:24,overflowY:"auto"}}>
+
+        {/* Logo */}
+        <div style={{fontSize:52,marginBottom:12,filter:"drop-shadow(0 0 20px rgba(255,107,157,.6))",animation:"float 3s ease-in-out infinite"}}>🌸</div>
+        <div style={{fontWeight:900,fontSize:26,letterSpacing:-1,marginBottom:6,
+          background:"linear-gradient(135deg,#FF6B9D,#C084FC)",backgroundSize:"200%",
+          WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",animation:"shimmer 3s linear infinite"}}>
+          GulCRM
+        </div>
+
+        {checkLicense(license) ? (
+          /* ── АКТИВНАЯ ЛИЦЕНЗИЯ ── */
+          <>
+            <div style={{width:"100%",maxWidth:340,borderRadius:20,padding:24,marginBottom:20,
+              background:"linear-gradient(135deg,rgba(52,211,153,.12),rgba(52,211,153,.05))",
+              border:"1px solid rgba(52,211,153,.3)",textAlign:"center"}}>
+              <div style={{fontSize:40,marginBottom:8}}>🌸</div>
+              <div style={{fontWeight:900,fontSize:22,color:"#34D399",marginBottom:6}}>
+                GulCRM PRO
+              </div>
+              <div style={{fontSize:13,color:tx2,lineHeight:1.7}}>
+                {lang==="uz"?"Obuna faol":"Подписка активна"}
+              </div>
+              <div style={{marginTop:12,fontWeight:700,fontSize:15,color:"#34D399"}}>
+                {lang==="uz"?"Tugash sanasi:":"Действует до:"} {new Date(license.expiresAt).toLocaleDateString(lang==="uz"?"uz-UZ":"ru-RU",{day:"numeric",month:"long",year:"numeric"})}
+              </div>
+              <div style={{marginTop:8,fontSize:12,color:tx3}}>
+                ID: {deviceId}
+              </div>
+            </div>
+            <button onClick={()=>setLicScreen(false)} style={{...priBtn,maxWidth:340,width:"100%"}}>
+              {lang==="uz"?"Davom etish →":"Продолжить →"}
+            </button>
+          </>
+        ) : expired ? (
+          <>
+            <div style={{fontSize:14,color:tx2,marginBottom:24,textAlign:"center",lineHeight:1.6}}>
+              {lang==="uz"?"Bepul davr tugadi":"Бесплатный период завершён"}
+            </div>
+
+            {/* Plan selector */}
+            <div style={{width:"100%",maxWidth:340,marginBottom:16,display:"flex",flexDirection:"column",gap:10}}>
+
+              {/* Monthly */}
+              <div style={{borderRadius:18,padding:16,
+                background:"linear-gradient(135deg,rgba(255,107,157,.1),rgba(192,132,252,.06))",
+                border:"1.5px solid rgba(255,107,157,.3)",cursor:"pointer"}}
+                onClick={()=>{}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:tx3,letterSpacing:.5,textTransform:"uppercase",marginBottom:4}}>
+                      {lang==="uz"?"OYLIK":"ЕЖЕМЕСЯЧНО"}
+                    </div>
+                    <div style={{fontWeight:900,fontSize:28,letterSpacing:-1,
+                      background:"linear-gradient(135deg,#FF6B9D,#C084FC)",
+                      WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>
+                      50 000
+                    </div>
+                    <div style={{fontSize:12,color:tx2,marginTop:2}}>{lang==="uz"?"so'm / oy":"сум / месяц"}</div>
+                  </div>
+                  <div style={{fontSize:32}}>📅</div>
+                </div>
+              </div>
+
+              {/* Annual - highlighted */}
+              <div style={{borderRadius:18,padding:16,position:"relative",overflow:"hidden",
+                background:"linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,107,157,.08))",
+                border:"2px solid rgba(255,215,0,.5)"}}>
+                {/* ВЫГОДНО badge */}
+                <div style={{position:"absolute",top:12,right:12,
+                  background:"linear-gradient(135deg,#FFD166,#FB923C)",
+                  color:"#fff",fontSize:10,fontWeight:800,padding:"3px 10px",
+                  borderRadius:20,letterSpacing:.5}}>
+                  {lang==="uz"?"FOYDALI 🔥":"ВЫГОДНО 🔥"}
+                </div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:"#FFD166",letterSpacing:.5,textTransform:"uppercase",marginBottom:4}}>
+                      {lang==="uz"?"YILLIK":"НА ГОД"}
+                    </div>
+                    <div style={{fontWeight:900,fontSize:28,letterSpacing:-1,color:"#FFD166"}}>
+                      450 000
+                    </div>
+                    <div style={{fontSize:12,color:tx2,marginTop:2}}>{lang==="uz"?"so'm / yil":"сум / год"}</div>
+                    <div style={{fontSize:11,color:"#34D399",fontWeight:700,marginTop:4}}>
+                      {lang==="uz"?"= 37 500 so'm/oy • 2 oy bepul!":"= 37 500 сум/мес • 2 месяца бесплатно!"}
+                    </div>
+                  </div>
+                  <div style={{fontSize:32}}>🎁</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment instructions */}
+            <div style={{width:"100%",maxWidth:340,borderRadius:18,padding:16,marginBottom:16,
+              background:sf,border:"1px solid "+cb}}>
+              <div style={{fontSize:12,fontWeight:700,color:tx3,marginBottom:12,letterSpacing:.5,textTransform:"uppercase"}}>
+                {lang==="uz"?"TO'LOV QILISH":"КАК ОПЛАТИТЬ"}
+              </div>
+              <div style={{fontSize:12,color:tx2,marginBottom:12,padding:"8px 12px",borderRadius:10,
+                background:"rgba(255,215,0,.08)",border:"1px solid rgba(255,215,0,.2)"}}>
+                💳 {lang==="uz"
+                  ? "50 000 so'm (oylik) yoki 450 000 so'm (yillik) o'tkazing"
+                  : "Переведите 50 000 сум (месяц) или 450 000 сум (год)"}
+              </div>
+              {[
+                [lang==="uz"?"Kartaga o'tkazing:":"Переведите на карту:", CARD, "#FF6B9D"],
+                ["Telegram:", TG, "#0088cc"],
+                [lang==="uz"?"Qurilma ID:":"ID устройства:", deviceId, "#C084FC"],
+              ].map(([label, value, color], i) => (
+                <div key={i} style={{marginBottom:i<2?12:0}}>
+                  <div style={{fontSize:11,color:tx3,marginBottom:3}}>{label}</div>
+                  <div style={{fontWeight:800,fontSize:15,color,letterSpacing:.5,
+                    padding:"8px 12px",borderRadius:10,background:sf2,
+                    fontFamily:"monospace",cursor:"pointer"}}
+                    onClick={()=>{navigator.clipboard?.writeText(value);showToast(lang==="uz"?"Nusxalandi!":"Скопировано!","📋");}}>
+                    {value}
+                  </div>
+                </div>
+              ))}
+              <div style={{fontSize:11,color:tx3,marginTop:12,lineHeight:1.7}}>
+                {lang==="uz"
+                  ? "To'lov qilib, ID va skrinshot bilan Telegramga yozing. Kod 1 soat ichida keladi."
+                  : "После оплаты напишите в Telegram с ID устройства и скриншотом. Код придёт в течение 1 часа."}
+              </div>
+            </div>
+
+            {/* Code input */}
+            <div style={{width:"100%",maxWidth:340,marginBottom:12}}>
+              <div style={{fontSize:11,fontWeight:700,color:tx3,letterSpacing:.5,textTransform:"uppercase",marginBottom:8}}>
+                {lang==="uz"?"AKTIVATSIYA KODI":"КОД АКТИВАЦИИ"}
+              </div>
+              <input
+                value={licInput}
+                onChange={e=>setLicInput(e.target.value.toUpperCase())}
+                placeholder="XXXX-XXXX"
+                style={{...inp,textAlign:"center",fontFamily:"monospace",fontSize:20,
+                  fontWeight:800,letterSpacing:3,background:sf2,border:"2px solid "+(licError?"#FB7185":licInput.length>3?acc:""+cb)}}
+              />
+              {licError&&<div style={{fontSize:12,color:"#FB7185",marginTop:6,textAlign:"center"}}>{licError}</div>}
+            </div>
+
+            <button onClick={()=>{
+              const result = activateLicense(licInput);
+              if (result) {
+                setLicense(result);
+                setLicScreen(false);
+                setLicInput("");
+                setLicError("");
+                showToast(lang==="uz"?"GulCRM faollashtirildi! 🌸":"GulCRM активирован! 🌸","✅");
+              } else {
+                setLicError(lang==="uz"?"Noto'g'ri kod. Iltimos qaytadan tekshiring.":"Неверный код. Проверьте и попробуйте снова.");
+              }
+            }} style={{...priBtn,maxWidth:340,width:"100%"}}>
+              {lang==="uz"?"Faollashtirish":"Активировать"}
+            </button>
+          </>
+        ) : (
+          /* Trial mode info */
+          <>
+            <div style={{width:"100%",maxWidth:340,borderRadius:20,padding:20,marginBottom:20,
+              background:"linear-gradient(135deg,rgba(52,211,153,.1),rgba(52,211,153,.05))",
+              border:"1px solid rgba(52,211,153,.25)"}}>
+              <div style={{fontWeight:800,fontSize:18,color:"#34D399",marginBottom:4}}>
+                ✅ {lang==="uz"?"Bepul sinov davri":"Бесплатный пробный период"}
+              </div>
+              <div style={{fontSize:28,fontWeight:900,color:"#34D399",letterSpacing:-1}}>{daysLeft}</div>
+              <div style={{fontSize:13,color:tx2,marginTop:2}}>{lang==="uz"?"kun qoldi":"дней осталось"}</div>
+            </div>
+            <div style={{fontSize:13,color:tx2,textAlign:"center",lineHeight:1.7,maxWidth:300,marginBottom:24}}>
+              {lang==="uz"
+                ? "Bepul davr tugagach, oylik 50 000 so'mlik obuna kerak bo'ladi."
+                : "После пробного периода потребуется подписка 50 000 сум/месяц."}
+            </div>
+            <button onClick={()=>setLicScreen(false)} style={{...priBtn,maxWidth:340,width:"100%"}}>
+              {lang==="uz"?"Davom etish →":"Продолжить →"}
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+    // ── NAV ───────────────────────────────────────────────────────────────────
+  const NAV = [
+    {id:"dashboard", ic:<Home size={20}/>,     ru:"Главная",    uz:"Bosh"},
+    {id:"calendar",  ic:<Calendar size={20}/>, ru:"Календарь",  uz:"Kalendar"},
+    {id:"clients",   ic:<Users size={20}/>,    ru:"Клиенты",    uz:"Mijozlar"},
+    {id:"finance",   ic:<Wallet size={20}/>,   ru:"Финансы",    uz:"Moliya"},
+    {id:"stats",     ic:<BarChart2 size={20}/>,ru:"Статистика",  uz:"Statistika"},
+    {id:"settings",  ic:<Settings size={20}/>, ru:"Настройки",  uz:"Sozlama"},
+  ];
+
+  // ── SCREENS ───────────────────────────────────────────────────────────────
+
+  // ── DASHBOARD ──
+  function screenDashboard() {
+    const todayAppts = appts.filter(a => a.dateKey === todayK).sort((a,b) => a.time.localeCompare(b.time));
+    const now = new Date();
+    const nowMin = now.getHours()*60 + now.getMinutes();
+
+    // Ближайшая предстоящая запись
+    const nextAppt = todayAppts.find(a => {
+      const [hh,mm] = a.time.split(":").map(Number);
+      return hh*60+mm > nowMin;
+    });
+
+    // Уже прошедшие сегодня
+    const doneAppts = todayAppts.filter(a => {
+      const [hh,mm] = a.time.split(":").map(Number);
+      return hh*60+mm <= nowMin;
+    });
+
+    // Выручка сегодня (оплаченные)
+    const todayRevenue = todayAppts.filter(a => a.status==="paid").reduce((s,a) => s+a.priceUzs, 0);
+    const todayDebt    = todayAppts.filter(a => a.status==="debt").reduce((s,a) => s+a.priceUzs, 0);
+    const todayTotal   = todayAppts.length;
+    const todayDone    = doneAppts.length;
+
+    // Завтрашние записи
+    const tmAppts = appts.filter(a => a.dateKey === TMK).sort((a,b) => a.time.localeCompare(b.time));
+
+    // Минут до следующей записи
+    function minutesUntil(timeStr) {
+      const [hh,mm] = timeStr.split(":").map(Number);
+      return hh*60+mm - nowMin;
+    }
+
+    const greetHour = now.getHours();
+    const greetStr = lang==="uz"
+      ? (greetHour<12?"Xayrli tong":greetHour<18?"Xayrli kun":"Xayrli kech")
+      : (greetHour<12?"Доброе утро":greetHour<18?"Добрый день":"Добрый вечер");
+
+    return (
+      <div style={{paddingBottom:80}}>
+        {/* Greeting */}
+        <div style={{padding:"18px 20px 12px"}}>
+          <div style={{fontSize:13, color:tx3, fontWeight:600, marginBottom:2}}>{greetStr} 👋</div>
+          <div style={{fontWeight:800, fontSize:24, letterSpacing:-.5, color:tx}}>
+            {lang==="uz"?"Bugun":"Сегодня"}, {fmtDate(todayK, lang)}
+          </div>
+          <div style={{fontSize:13, color:tx2, marginTop:3}}>
+            {PROFILES[profile].emoji} {lang==="uz"?PROFILES[profile].uz:PROFILES[profile].ru}
+          </div>
+        </div>
+
+        {/* Day progress bar */}
+        {todayTotal > 0 && (
+          <div style={{padding:"0 20px 14px"}}>
+            <div style={{display:"flex", justifyContent:"space-between", marginBottom:6}}>
+              <span style={{fontSize:12, color:tx3, fontWeight:600}}>
+                {lang==="uz"?"Bajarildi":"Выполнено"}: {todayDone}/{todayTotal}
+              </span>
+              <span style={{fontSize:12, color:acc2, fontWeight:700}}>
+                {Math.round(todayDone/todayTotal*100)}%
+              </span>
+            </div>
+            <div style={{height:6, background:sf2, borderRadius:3, overflow:"hidden"}}>
+              <div style={{height:"100%", width:(todayDone/todayTotal*100)+"%", background:"linear-gradient(90deg,#C084FC,#818CF8)", borderRadius:3, transition:"width .6s"}} />
+            </div>
+          </div>
+        )}
+
+        {/* KPI row */}
+        <div style={{display:"flex", gap:9, padding:"0 20px 14px"}}>
+          <div style={{...card, flex:1, padding:"13px 12px", textAlign:"center"}}>
+            <div style={{fontSize:22, marginBottom:4}}>📅</div>
+            <div style={{fontWeight:800, fontSize:20, color:acc2}}>{todayTotal}</div>
+            <div style={{fontSize:11, color:tx3, fontWeight:600, marginTop:2}}>{lang==="uz"?"Yozuv":"Записей"}</div>
+          </div>
+          <div style={{...card, flex:1, padding:"13px 12px", textAlign:"center"}}>
+            <div style={{fontSize:22, marginBottom:4}}>💰</div>
+            <div style={{fontWeight:800, fontSize:16, color:"#10B981", lineHeight:1.2}}>{fp(todayRevenue)}</div>
+            <div style={{fontSize:11, color:tx3, fontWeight:600, marginTop:2}}>{lang==="uz"?"Tushum":"Выручка"}</div>
+          </div>
+          <div style={{...card, flex:1, padding:"13px 12px", textAlign:"center"}}>
+            <div style={{fontSize:22, marginBottom:4}}>⏳</div>
+            <div style={{fontWeight:800, fontSize:16, color:todayDebt>0?"#F59E0B":tx3, lineHeight:1.2}}>{todayDebt>0?fp(todayDebt):"—"}</div>
+            <div style={{fontSize:11, color:tx3, fontWeight:600, marginTop:2}}>{lang==="uz"?"Qarz":"Долг"}</div>
+          </div>
+        </div>
+
+        {/* Next appointment */}
+        {nextAppt ? (
+          <div style={{margin:"0 20px 14px"}}>
+            <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:8, textTransform:"uppercase"}}>
+              {lang==="uz"?"KEYINGI YOZUV":"БЛИЖАЙШАЯ ЗАПИСЬ"}
+            </div>
+            <div style={{...card, padding:16, background:dark?"rgba(255,107,157,.12)":"rgba(255,107,157,.08)", border:"1px solid rgba(192,132,252,.25)", position:"relative", overflow:"hidden"}}
+              onClick={() => openEdit(nextAppt)}>
+              {/* pulse dot */}
+              <div style={{position:"absolute", top:14, right:14, width:10, height:10, borderRadius:"50%", background:acc2, boxShadow:"0 0 0 3px rgba(192,132,252,.3)"}}>
+                <div style={{position:"absolute", inset:0, borderRadius:"50%", background:acc2, animation:"ping 1.5s ease-in-out infinite", opacity:.6}} />
+              </div>
+              <div style={{display:"flex", alignItems:"center", gap:12}}>
+                <div style={{width:48, height:48, borderRadius:14, background:"linear-gradient(135deg,#FF6B9D,#C084FC)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", flexShrink:0}}>
+                  <div style={{fontWeight:800, fontSize:15, color:"#fff"}}>{nextAppt.time.split(":")[0]}</div>
+                  <div style={{fontSize:11, color:"rgba(255,255,255,.8)"}}>:{nextAppt.time.split(":")[1]}</div>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:700, fontSize:15, color:tx, marginBottom:2}}>{lang==="uz"?nextAppt.clientName_uz:nextAppt.clientName}</div>
+                  <div style={{fontSize:12, color:tx2, marginBottom:4}}>{lang==="uz"?nextAppt.svc_uz:nextAppt.svc}</div>
+                  <div style={{display:"flex", gap:8, alignItems:"center"}}>
+                    <span style={{fontSize:12, color:acc2, fontWeight:700}}>
+                      ⏱ {(() => { const m=minutesUntil(nextAppt.time); return m<60 ? (lang==="uz"?`${m} daqiqada`:`через ${m} мин`) : (lang==="uz"?`${Math.round(m/60)} soatda`:`через ${Math.round(m/60)} ч`); })()}
+                    </span>
+                    {nextAppt.priceUzs>0 && <span style={{fontSize:12, color:tx3}}>· {fp(nextAppt.priceUzs)}</span>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{margin:"0 20px 14px", ...card, padding:16, textAlign:"center"}}>
+            <div style={{fontSize:32, marginBottom:8}}>🎉</div>
+            <div style={{fontWeight:700, fontSize:15, color:tx, marginBottom:4}}>{lang==="uz"?"Bugungi yozuvlar tugadi":"Записи на сегодня завершены"}</div>
+            <div style={{fontSize:12, color:tx3}}>{lang==="uz"?"Ertaga ko'rishguncha!":"До завтра!"}</div>
+          </div>
+        )}
+
+        {/* Today's schedule */}
+        {todayAppts.length > 0 && (
+          <div style={{margin:"0 20px 14px"}}>
+            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8}}>
+              <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, textTransform:"uppercase"}}>
+                {lang==="uz"?"BUGUNGI KUN":"РАСПИСАНИЕ НА СЕГОДНЯ"}
+              </div>
+              <button onClick={() => setScreen("calendar")} style={{fontSize:11, color:acc2, fontWeight:700, border:"none", background:"none", cursor:"pointer", fontFamily:"inherit"}}>
+                {lang==="uz"?"Hammasi →":"Все →"}
+              </button>
+            </div>
+            <div style={{display:"flex", flexDirection:"column", gap:7}}>
+              {todayAppts.map((a, i) => {
+                const [hh,mm] = a.time.split(":").map(Number);
+                const isPassed = hh*60+mm <= nowMin;
+                const sc = STC[a.status] || STC.paid;
+                return (
+                  <div key={a.id} onClick={() => openEdit(a)}
+                    style={{display:"flex", alignItems:"center", gap:10, padding:"10px 14px",
+                      background: isPassed ? sf2 : cg,
+                      borderRadius:14, border:`1px solid ${isPassed?bd:sc[2]}`,
+                      opacity: isPassed ? .55 : 1, cursor:"pointer", transition:"all .2s"}}>
+                    <div style={{fontWeight:700, fontSize:13, color:isPassed?tx3:sc[1], width:40, flexShrink:0}}>{a.time}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:600, fontSize:13, color:isPassed?tx3:tx}}>{lang==="uz"?a.clientName_uz:a.clientName}</div>
+                      <div style={{fontSize:11, color:tx3, marginTop:1}}>{lang==="uz"?a.svc_uz:a.svc}</div>
+                    </div>
+                    <div style={{display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3}}>
+                      {a.priceUzs>0 && <div style={{fontSize:12, fontWeight:700, color:isPassed?tx3:sc[1]}}>{fp(a.priceUzs)}</div>}
+                      {isPassed
+                        ? <span style={{fontSize:10, color:tx3}}>✓</span>
+                        : <div style={{width:8, height:8, borderRadius:"50%", background:sc[1]}} />
+                      }
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Tomorrow preview */}
+        {tmAppts.length > 0 && (
+          <div style={{margin:"0 20px 14px"}}>
+            <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:8, textTransform:"uppercase"}}>
+              {lang==="uz"?"ERTAGA":"ЗАВТРА"} · {tmAppts.length} {lang==="uz"?"yozuv":"зап."}
+            </div>
+            <div style={{...card, padding:"12px 14px"}}>
+              {tmAppts.slice(0,3).map((a,i) => (
+                <div key={a.id} style={{display:"flex", alignItems:"center", gap:10, paddingBottom:i<Math.min(tmAppts.length,3)-1?10:0, marginBottom:i<Math.min(tmAppts.length,3)-1?10:0, borderBottom:i<Math.min(tmAppts.length,3)-1?`1px solid ${bd}`:"none"}}>
+                  <div style={{fontWeight:700, fontSize:12, color:acc2, width:36, flexShrink:0}}>{a.time}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13, fontWeight:600, color:tx}}>{lang==="uz"?a.clientName_uz:a.clientName}</div>
+                    <div style={{fontSize:11, color:tx3}}>{lang==="uz"?a.svc_uz:a.svc}</div>
+                  </div>
+                  {a.priceUzs>0 && <div style={{fontSize:12, fontWeight:700, color:tx2}}>{fp(a.priceUzs)}</div>}
+                </div>
+              ))}
+              {tmAppts.length>3 && <div style={{fontSize:12, color:acc2, fontWeight:600, marginTop:8, textAlign:"center"}}>+{tmAppts.length-3} {lang==="uz"?"ta yozuv":"записей"}</div>}
+            </div>
+          </div>
+        )}
+
+        {/* Debtors quick block */}
+        {debtors.length > 0 && (
+          <div style={{margin:"0 20px 14px"}}>
+            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8}}>
+              <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, textTransform:"uppercase"}}>
+                {lang==="uz"?"QARZDORLAR":"ДОЛЖНИКИ"} · {debtors.length}
+              </div>
+              <button onClick={() => setScreen("finance")} style={{fontSize:11, color:"#F59E0B", fontWeight:700, border:"none", background:"none", cursor:"pointer", fontFamily:"inherit"}}>
+                {lang==="uz"?"Ko'rish →":"Смотреть →"}
+              </button>
+            </div>
+            <div style={{...card, padding:"12px 14px", border:"1px solid rgba(245,158,11,.2)"}}>
+              {debtors.slice(0,2).map((d,i) => (
+                <div key={d.id} style={{display:"flex", alignItems:"center", gap:10, paddingBottom:i<Math.min(debtors.length,2)-1?10:0, marginBottom:i<Math.min(debtors.length,2)-1?10:0, borderBottom:i<Math.min(debtors.length,2)-1?`1px solid ${bd}`:"none"}}>
+                  <Av l={d.av} c={d.avc} sz={36}/>
+                  <div style={{flex:1}}><div style={{fontSize:13, fontWeight:600, color:tx}}>{lang==="uz"?d.name_uz:d.name}</div></div>
+                  <div style={{fontWeight:800, fontSize:14, color:"#F59E0B"}}>{fp(d.debtUzs)}</div>
+                </div>
+              ))}
+              {debtors.length > 2 && <div style={{fontSize:12, color:"#F59E0B", fontWeight:600, marginTop:8, textAlign:"center"}}>+{debtors.length-2} {lang==="uz"?"ta qarzdor":"должников"}</div>}
+            </div>
+          </div>
+        )}
+
+        {/* Quick add button */}
+        {todayAppts.length === 0 && (
+          <div style={{margin:"0 20px"}}>
+            <button onClick={() => { setSelDay(new Date()); setScreen("calendar"); openAdd(); }}
+              style={{width:"100%", height:52, borderRadius:16, border:"none", background:"linear-gradient(135deg,#FF6B9D,#C084FC)", color:"#fff", fontWeight:700, fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, boxShadow:glow, fontFamily:"inherit"}}>
+              ＋ {lang==="uz"?"Birinchi yozuvni qo'shing":"Добавьте первую запись"}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── CALENDAR ──
+  function screenCalendar() {
+    const days = lang==="uz" ? DU : DR;
+    const months = lang==="uz" ? MU : MRN;
+    return (
+      <div style={{paddingBottom:80}}>
+        {/* header */}
+        <div style={{padding:"14px 20px 6px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+          <div style={{fontWeight:800, fontSize:22, letterSpacing:-.5, color:tx}}>{lang==="uz"?"Kalendar":"Календарь"}</div>
+          <div style={{display:"flex", gap:6, alignItems:"center"}}>
+            <span style={{fontSize:11, fontWeight:600, color:tx3}}>{months[weekStart.getMonth()]} {weekStart.getFullYear()}</span>
+            <button onClick={() => setWeekOffset(w => w-1)} style={{width:28, height:28, borderRadius:"50%", border:`1.5px solid ${bd}`, background:sf, color:tx2, fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit"}}><ChevronLeft size={18}/></button>
+            <button onClick={() => { setWeekOffset(0); setSelDay(new Date()); }} style={{height:25, padding:"0 9px", borderRadius:12, border:"1.5px solid rgba(255,107,157,.4)", background:"rgba(255,107,157,.1)", color:acc2, fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:"inherit"}}>{lang==="uz"?"Bugun":"Сегодня"}</button>
+            <button onClick={() => setWeekOffset(w => w+1)} style={{width:28, height:28, borderRadius:"50%", border:`1.5px solid ${bd}`, background:sf, color:tx2, fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit"}}><ChevronRight size={18}/></button>
+          </div>
+        </div>
+
+        {/* week strip */}
+        <div style={{display:"flex", gap:6, padding:"4px 20px 12px", overflowX:"auto"}}>
+          {weekDays.map((d, i) => {
+            const k = dkey(d);
+            const isSel = k === selKey;
+            const isT   = k === todayK;
+            const hasA  = appts.some(a => a.dateKey === k);
+            const isOff2 = workCfg.offDays.includes(d.getDay());
+            return (
+              <div key={i} onClick={() => setSelDay(new Date(d))}
+                style={{flexShrink:0, width:44, height:60, borderRadius:14,
+                  display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2,
+                  cursor:"pointer",
+                  background: isSel ? "linear-gradient(135deg,#FF6B9D,#C084FC)" : isOff2 ? sf2 : sf,
+                  border: `1.5px solid ${isSel?"transparent":isT?"rgba(192,132,252,.5)":isOff2?"rgba(244,63,94,.25)":cb}`,
+                  boxShadow: isSel ? "0 5px 16px rgba(192,132,252,.45)" : "none",
+                  transform: isSel ? "scale(1.07)" : "scale(1)",
+                  transition:"all .22s",
+                  opacity: isOff2 && !isSel ? .6 : 1}}>
+                <span style={{fontSize:10, fontWeight:600, textTransform:"uppercase", letterSpacing:.3,
+                  color: isSel?"rgba(255,255,255,.75)":isOff2?"#F43F5E":isT?acc2:tx3}}>
+                  {days[d.getDay()]}
+                </span>
+                <span style={{fontWeight:800, fontSize:15, color:isSel?"#fff":isT?acc2:tx}}>{d.getDate()}</span>
+                <span style={{width:4, height:4, borderRadius:"50%", background:isSel?"rgba(255,255,255,.7)":hasA?acc2:"transparent"}} />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* day info */}
+        <div style={{padding:"0 20px 10px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+          <div style={{fontWeight:700, fontSize:14, color:tx2}}>{dayLabel()} · {dayAppts.length} {lang==="uz"?"zap.":"зап."}</div>
+          {dayAppts.filter(a=>a.status==="paid").length > 0 && (
+            <div style={{fontSize:12, fontWeight:700, color:"#10B981"}}>
+              ✓ {fp(dayAppts.filter(a=>a.status==="paid").reduce((s,a)=>s+a.priceUzs,0))}
+            </div>
+          )}
+        </div>
+
+        <div style={{padding:"0 20px", display:"flex", flexDirection:"column", gap:8}}>
+          {/* banners */}
+          {isOff && (
+            <div style={{padding:"11px 14px", borderRadius:13, background:"rgba(244,63,94,.07)", border:"1px solid rgba(244,63,94,.2)", display:"flex", alignItems:"center", gap:10, marginBottom:4}}>
+              <span style={{fontSize:18}}>🏖️</span>
+              <div>
+                <div style={{fontWeight:700, fontSize:13, color:"#F43F5E"}}>{lang==="uz"?"Dam olish kuni":"Выходной день"}</div>
+                <div style={{fontSize:11, color:tx3, marginTop:1}}>{lang==="uz"?"Yozuv qo'shish mumkin":"Можно добавить запись"}</div>
+              </div>
+            </div>
+          )}
+          {isPast && (
+            <div style={{padding:"11px 14px", borderRadius:13, background:"rgba(129,140,248,.07)", border:"1px solid rgba(129,140,248,.2)", display:"flex", alignItems:"center", gap:10, marginBottom:4}}>
+              <span style={{fontSize:18}}>📋</span>
+              <div>
+                <div style={{fontWeight:700, fontSize:13, color:"#818CF8"}}>{lang==="uz"?"O'tgan kun — faqat ko'rish":"Прошедший день — только просмотр"}</div>
+                <div style={{fontSize:11, color:tx3, marginTop:1}}>{lang==="uz"?"Yangi yozuv qo'shib bo'lmaydi":"Добавление записей недоступно"}</div>
+              </div>
+            </div>
+          )}
+
+          {/* slots */}
+          {dayAppts.length === 0 ? (
+            <div>
+              <div style={{textAlign:"center", padding:"10px 0 8px", color:tx3, fontSize:12, lineHeight:1.7}}>
+                {isPast
+                  ? (lang==="uz"?"Bu kunda yozuvlar yo'q edi":"В этот день записей не было")
+                  : (lang==="uz"?"Bo'sh kun — vaqtga bosib yozuv qo'shing":"Свободный день — нажмите на время")}
+              </div>
+              {!isPast && workHours.map((h, i) => {
+                const ok = canAdd(h);
+                return (
+                  <div key={h} onClick={ok ? () => openAdd(h) : undefined}
+                    style={{display:"flex", gap:10, alignItems:"center", marginBottom:5, cursor:ok?"pointer":"default", opacity:ok?1:.32}}>
+                    <span style={{fontSize:11, fontWeight:600, color:tx3, width:38, flexShrink:0}}>{h}</span>
+                    <div style={{flex:1, height:34, borderRadius:10,
+                      border: ok ? `1px dashed ${bd}` : "none",
+                      background: ok ? "transparent" : sf2,
+                      display:"flex", alignItems:"center", justifyContent:"center", color:tx3, fontSize:12}}>
+                      {ok ? "＋" : <span style={{fontSize:10}}>{lang==="uz"?"o'tdi":"прошло"}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <>
+              {dayAppts.map((a, i) => {
+                const sc = STC[a.status] || STC.pending;
+                const isPending = a.status === "pending";
+                const [ah,am] = a.time.split(":").map(Number);
+                const nowD = new Date();
+                const curMin = nowD.getHours()*60 + nowD.getMinutes();
+                const isFinished = a.dateKey===todayK && ah*60+am+(a.dur||60) <= curMin;
+                const showClose = isPending && isFinished;
+                return (
+                  <div key={a.id} style={{display:"flex", gap:10, alignItems:"flex-start", animation:`popIn .4s ${i*.06}s cubic-bezier(.34,1.56,.64,1) both`}}>
+                    <span style={{fontSize:11, fontWeight:600, color:tx3, width:38, flexShrink:0, paddingTop:13}}>{a.time}</span>
+                    <div onClick={() => showClose ? (setCloseAppt(a), setModal("close_appt")) : openEdit(a)}
+                      style={{flex:1, borderRadius:15, padding:"12px 13px 12px 16px",
+                        background: showClose
+                          ? (dark?"rgba(255,107,157,.12)":"rgba(255,107,157,.08)")
+                          : (dark ? sc[0].replace(".15",".22") : sc[0]),
+                        border:`1px solid ${showClose?"rgba(255,107,157,.35)":sc[2]}`,
+                        position:"relative", overflow:"hidden", cursor:"pointer"}}>
+                      <div style={{position:"absolute", left:0, top:0, bottom:0, width:4,
+                        background:showClose?acc2:sc[1], borderRadius:"4px 0 0 4px"}} />
+                      <div style={{display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8}}>
+                        <div style={{flex:1}}>
+                          <div style={{fontWeight:700, fontSize:14, marginBottom:2, color:tx}}>{lang==="uz"?a.clientName_uz:a.clientName}</div>
+                          <div style={{fontSize:12, color:tx2, marginBottom:5}}>{lang==="uz"?a.svc_uz:a.svc}</div>
+                          <div style={{display:"flex", gap:8, alignItems:"center"}}>
+                            <span style={{fontSize:11, color:tx3, fontWeight:600}}>⏱ {a.dur} {lang==="uz"?"daq":"мин"}</span>
+                            {!isPending && <Bdg type={a.status} text={a.status==="paid"?(lang==="uz"?"To'langan":"Оплачено"):a.status==="debt"?(lang==="uz"?"Qarz":"Долг"):(lang==="uz"?"Abonement":"Абонемент")} />}
+                            {isPending && !isFinished && <Bdg type="pending" text={lang==="uz"?"Kutilmoqda":"Ожидается"} />}
+                          </div>
+                        </div>
+                        <div style={{textAlign:"right", flexShrink:0}}>
+                          {a.priceUzs > 0 && <div style={{fontWeight:800, fontSize:15, color:showClose?acc2:sc[1]}}>{fp(a.priceUzs)}</div>}
+                          {showClose && (
+                            <div style={{marginTop:5, fontSize:11, fontWeight:700, color:acc2, display:"flex", alignItems:"center", gap:3}}>
+                              👋 {lang==="uz"?"Yopish":"Закрыть"}
+                            </div>
+                          )}
+                          {a.status === "debt" && (
+                            <button onClick={e => { e.stopPropagation(); setAppts(prev => prev.map(x => x.id===a.id?{...x,status:"paid"}:x)); showToast(lang==="uz"?"To'landi!":"Оплачено!","✅"); }}
+                              style={{marginTop:5, fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:9, border:"1.5px solid #10B981", background:"rgba(16,185,129,.1)", color:"#10B981", cursor:"pointer", fontFamily:"inherit"}}>
+                              {lang==="uz"?"To'landi":"Оплачено ✓"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {/* Баннер «закрыть запись» */}
+                      {showClose && (
+                        <div style={{marginTop:8, marginLeft:8, padding:"6px 10px", borderRadius:8, background:"rgba(255,107,157,.12)", display:"flex", alignItems:"center", gap:6}}>
+                          <span style={{fontSize:12}}>💜</span>
+                          <span style={{fontSize:11, fontWeight:700, color:acc2}}>
+                            {lang==="uz"?"Mijoz ketdi — to'lovni belgilang":"Клиент ушёл — отметьте оплату"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              {canAddAny && (
+                <div onClick={() => openAdd()} style={{display:"flex", gap:10, alignItems:"center", marginTop:2, cursor:"pointer", opacity:.65}}>
+                  <span style={{width:38}} />
+                  <div style={{flex:1, height:38, borderRadius:11, border:`1.5px dashed ${bd}`, display:"flex", alignItems:"center", justifyContent:"center", gap:6, color:tx3, fontSize:13, fontWeight:600}}>
+                    ＋ {lang==="uz"?"Yangi yozuv":"Новая запись"}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── CLIENTS ──
+  function screenClients() {
+    const filtered = clients.filter(c =>
+      !clFilter || c.name.toLowerCase().includes(clFilter.toLowerCase()) || c.name_uz.toLowerCase().includes(clFilter.toLowerCase())
+    );
+    return (
+      <div style={{paddingBottom:80}}>
+        <div style={{fontWeight:800, fontSize:22, letterSpacing:-.5, padding:"14px 20px 8px", color:tx}}>{lang==="uz"?"Mijozlar":"Клиенты"}</div>
+        <div style={{margin:"0 20px 10px", height:44, background:sf, borderRadius:13, border:`1.5px solid ${bd}`, display:"flex", alignItems:"center", padding:"0 13px", gap:10}}>
+          <Search size={16} color={tx3}/>
+          <input value={clFilter} onChange={e => setClFilter(e.target.value)}
+            placeholder={lang==="uz"?"Mijoz qidirish...":"Поиск клиента..."}
+            style={{flex:1, border:"none", background:"none", fontSize:14, color:tx, outline:"none", fontFamily:"inherit"}} />
+          {clFilter && <button onClick={() => setClFilter("")} style={{border:"none", background:"none", color:tx3, fontSize:16, cursor:"pointer"}}>✕</button>}
+        </div>
+        <div style={{display:"flex", gap:9, padding:"0 20px 13px"}}>
+          <button onClick={() => { setSyncing(true); setTimeout(() => { setSyncing(false); showToast(lang==="uz"?"Kontaktlar sinxronlashdi!":"Контакты синхронизированы!","📱"); }, 1600); }}
+            style={{flex:1, height:42, borderRadius:12, background:"linear-gradient(135deg,rgba(192,132,252,.1),rgba(129,140,248,.1))", border:"1.5px solid rgba(255,107,157,.25)", color:acc2, fontWeight:600, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:7, fontFamily:"inherit"}}>
+            {syncing ? "⏳ ..." : "🔄 " + (lang==="uz"?"Sinxronlash":"Синхронизировать")}
+          </button>
+          <button onClick={() => { setClForm({name:"", phone:"", birthday:"", note:""}); setModal("new_cl"); }}
+            style={{height:42, padding:"0 14px", borderRadius:12, background:"linear-gradient(135deg,#FF6B9D,#C084FC)", border:"none", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer", boxShadow:glow, fontFamily:"inherit"}}>
+            + {lang==="uz"?"Yangi":"Новый"}
+          </button>
+        </div>
+        {syncing ? (
+          <div style={{padding:"0 20px", display:"flex", flexDirection:"column", gap:10}}>
+            {[1,2,3,4].map(i => <div key={i} style={{height:68, borderRadius:16, background:sf2, opacity:.7}} />)}
+          </div>
+        ) : (
+          <div style={{padding:"0 20px", display:"flex", flexDirection:"column", gap:9}}>
+            {filtered.map((c, i) => {
+              const cDebt = appts.filter(a => a.clientId===c.id && a.status==="debt").reduce((s,a) => s+a.priceUzs, 0);
+              const cVis  = appts.filter(a => a.clientId===c.id && a.status!=="debt").length;
+              const cSt   = cDebt>0 ? "debt" : appts.some(a => a.clientId===c.id && a.status==="sub") ? "sub" : "ok";
+              return (
+                <div key={c.id} onClick={() => { setSelClient({...c, debtUzs:cDebt, visits:cVis, status:cSt}); setModal("client"); }}
+                  style={{...card, padding:"12px 14px", display:"flex", alignItems:"center", gap:11, cursor:"pointer", animation:`popIn .4s ${i*.06}s cubic-bezier(.34,1.56,.64,1) both`}}>
+                  <Av l={c.av} c={c.avc} />
+                  <div style={{flex:1}}>
+                    <div style={{fontWeight:700, fontSize:14, marginBottom:2, color:tx}}>{lang==="uz"?c.name_uz:c.name}</div>
+                    <div style={{fontSize:12, color:tx2}}>
+                      📅 {cVis} {lang==="uz"?"tashrif":"визитов"}
+                      {cDebt > 0 && <span style={{color:"#F59E0B", marginLeft:6}}>· {fp(cDebt)}</span>}
+                    </div>
+                  </div>
+                  <Bdg type={cSt} text={cSt==="debt"?(lang==="uz"?"Qarzi bor":"Долг"):cSt==="sub"?(lang==="uz"?"Abonement":"Абонемент"):(lang==="uz"?"To'langan":"Оплачено")} />
+                </div>
+              );
+            })}
+            {filtered.length === 0 && <div style={{textAlign:"center", color:tx3, padding:32, fontSize:13}}>🔍 {lang==="uz"?"Topilmadi":"Не найдено"}</div>}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── FINANCE ──
+  function screenFinance() {
+    return (
+      <div style={{paddingBottom:80}}>
+        <div style={{fontWeight:800, fontSize:22, letterSpacing:-.5, padding:"14px 20px 8px", color:tx}}>{lang==="uz"?"Moliya":"Финансы"}</div>
+        <div style={{display:"flex", gap:9, padding:"0 20px 12px"}}>
+          <div style={{...card, flex:1, padding:13}}>
+            <div style={{fontSize:11, color:tx3, fontWeight:600, marginBottom:3}}>{lang==="uz"?"Umumiy qarz":"Общий долг"}</div>
+            <div style={{fontWeight:800, fontSize:17, color:"#F59E0B"}}>{fp(totalDebt)}</div>
+          </div>
+          <div style={{...card, flex:1, padding:13}}>
+            <div style={{fontSize:11, color:tx3, fontWeight:600, marginBottom:3}}>{lang==="uz"?"Abonementlar":"Абонементы"}</div>
+            <div style={{fontWeight:800, fontSize:17, color:"#8B5CF6"}}>{subs.length} {lang==="uz"?"ta":"шт"}</div>
+          </div>
+        </div>
+        <div style={{display:"flex", margin:"0 20px 12px", background:sf2, borderRadius:13, padding:4, gap:4}}>
+          <button onClick={() => setFinTab("debt")} style={{flex:1, height:34, borderRadius:10, border:"none", background:finTab==="debt"?sf:"transparent", color:finTab==="debt"?acc2:tx3, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit"}}>{lang==="uz"?"Qarzdorlar":"Должники"}</button>
+          <button onClick={() => setFinTab("sub")}  style={{flex:1, height:34, borderRadius:10, border:"none", background:finTab==="sub"?sf:"transparent",  color:finTab==="sub"?acc2:tx3,  fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit"}}>{lang==="uz"?"Abonementlar":"Абонементы"}</button>
+        </div>
+        <div style={{padding:"0 20px", display:"flex", flexDirection:"column", gap:10}}>
+          {finTab === "debt" ? (
+            debtors.length === 0
+              ? <div style={{textAlign:"center", color:tx3, padding:32, fontSize:13}}>🎉 {lang==="uz"?"Qarzdorlar yo'q":"Должников нет"}</div>
+              : debtors.map((d, i) => (
+                <div key={d.id} style={{...card, padding:14, border:"1px solid rgba(245,158,11,.2)", animation:`popIn .4s ${i*.08}s cubic-bezier(.34,1.56,.64,1) both`}}>
+                  <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:10}}>
+                    <Av l={d.av} c={d.avc} sz={42} />
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:700, fontSize:14, color:tx}}>{lang==="uz"?d.name_uz:d.name}</div>
+                    </div>
+                    <div style={{fontWeight:800, fontSize:17, color:"#F59E0B"}}>{fp(d.debtUzs)}</div>
+                  </div>
+                  <button onClick={() => { setTgMsg((lang==="uz"?`Salom, ${d.name_uz}! 💜\n\nSiz ${fp(d.debtUzs)} to'lovni amalga oshirmadingiz.\nIltimos, to'lovni kechiktirmang 🙏\n\nHurmat bilan, GulCRM`:`Здравствуйте, ${d.name}! 💜\n\nВы не оплатили ${fp(d.debtUzs)} за процедуру.\nПожалуйста, произведите оплату 🙏\n\nС уважением, GulCRM`)); setModal("tg"); }}
+                    style={{width:"100%", height:40, borderRadius:11, border:"none", background:"linear-gradient(135deg,#0088cc,#229ED9)", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontFamily:"inherit"}}>
+                    📨 {lang==="uz"?"Telegram orqali eslatish":"Напомнить в Telegram"}
+                  </button>
+                </div>
+              ))
+          ) : (
+            subs.map((s, i) => {
+              const rem = s.total - s.used;
+              const pct = Math.round(s.used / s.total * 100);
+              return (
+                <div key={s.id} style={{...card, padding:14, border:"1px solid rgba(139,92,246,.2)", animation:`popIn .4s ${i*.08}s cubic-bezier(.34,1.56,.64,1) both`}}>
+                  <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:12}}>
+                    <Av l={s.av} c={s.avc} sz={42} />
+                    <div style={{flex:1}}>
+                      <div style={{fontWeight:700, fontSize:14, color:tx}}>{lang==="uz"?s.clientName_uz:s.clientName}</div>
+                      <div style={{fontSize:12, color:tx2, marginTop:2}}>{lang==="uz"?s.svc_uz:s.svc}</div>
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontWeight:800, fontSize:22, color:"#8B5CF6"}}>{rem}</div>
+                      <div style={{fontSize:11, color:tx3}}>/ {s.total}</div>
+                    </div>
+                  </div>
+                  <div style={{height:8, background:sf2, borderRadius:4, overflow:"hidden", marginBottom:11}}>
+                    <div style={{height:"100%", width:pct+"%", background:"linear-gradient(90deg,#FF6B9D,#C084FC)", borderRadius:4, transition:"width .5s"}} />
+                  </div>
+                  <button onClick={() => { if (s.used >= s.total) return; setSubs(prev => prev.map(x => x.id===s.id?{...x,used:x.used+1}:x)); showToast(lang==="uz"?"Seans ishlatildi!":"Сеанс использован!","🎫"); }}
+                    style={{width:"100%", height:40, borderRadius:11, border:"1.5px solid rgba(139,92,246,.3)", background:"rgba(139,92,246,.08)", color:"#8B5CF6", fontWeight:700, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontFamily:"inherit"}}>
+                    {lang==="uz"?"－ 1 seans":"－ 1 сеанс"}
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── STATS ──
+  function screenStats() {
+    const svcMap = {};
+    statAppts.forEach(a => { svcMap[a.svc] = (svcMap[a.svc]||0)+1; });
+    const topSvc = Object.entries(svcMap).sort((a,b) => b[1]-a[1])[0];
+    const dayMap = {};
+    appts.filter(a => a.status!=="debt").forEach(a => {
+      const days2 = lang==="uz" ? DU : DR;
+      const dn = days2[new Date(a.dateKey).getDay()];
+      dayMap[dn] = (dayMap[dn]||0)+1;
+    });
+    const bDay = Object.entries(dayMap).sort((a,b) => b[1]-a[1])[0];
+    const chartDs = Array.from({length:7}, (_, i) => { const d=new Date(todayD); d.setDate(todayD.getDate()-6+i); return d; });
+    const cRev = chartDs.map(d => appts.filter(a => a.dateKey===dkey(d) && a.status==="paid").reduce((s,a)=>s+a.priceUzs,0));
+    const cExp = chartDs.map(d => expenses.filter(e => e.dateKey===dkey(d)).reduce((s,e)=>s+e.amtUzs,0));
+    const cMax = Math.max(...cRev, ...cExp, 1);
+    const catMap = {};
+    statExps.forEach(e => { catMap[e.catId] = (catMap[e.catId]||0)+e.amtUzs; });
+    const catArr = Object.entries(catMap).sort((a,b) => b[1]-a[1]);
+    const periods = lang==="uz" ? ["Bugun","Hafta","Oy"] : ["Сегодня","Неделя","Месяц"];
+
+    return (
+      <div style={{paddingBottom:80}}>
+        <div style={{fontWeight:800, fontSize:22, letterSpacing:-.5, padding:"14px 20px 8px", color:tx}}>{lang==="uz"?"Statistika":"Статистика"}</div>
+        <div style={{display:"flex", margin:"0 20px 10px", background:sf2, borderRadius:13, padding:4, gap:4}}>
+          {periods.map((p2, i) => (
+            <button key={i} onClick={() => setStatPeriod(i)} style={{flex:1, height:33, borderRadius:10, border:"none", background:statPeriod===i?sf:"transparent", color:statPeriod===i?acc2:tx3, fontWeight:600, fontSize:13, cursor:"pointer", fontFamily:"inherit"}}>{p2}</button>
+          ))}
+        </div>
+        <div style={{display:"flex", margin:"0 20px 12px", gap:8}}>
+          {[[lang==="uz"?"Daromad":"Обзор","overview"],[lang==="uz"?"Xarajatlar":"Расходы","expenses"]].map(([lbl,id]) => (
+            <button key={id} onClick={() => setStatTab(id)} style={{flex:1, height:35, borderRadius:11, border:`1.5px solid ${statTab===id?acc2:bd}`, background:statTab===id?"rgba(255,107,157,.1)":sf2, color:statTab===id?acc2:tx3, fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:"inherit"}}>{lbl}</button>
+          ))}
+        </div>
+
+        {statTab === "overview" ? (
+          <>
+            <div style={{margin:"0 20px 12px", borderRadius:16, padding:"14px 16px", background:profit>=0?"linear-gradient(135deg,rgba(16,185,129,.1),rgba(16,185,129,.04))":"linear-gradient(135deg,rgba(244,63,94,.1),rgba(244,63,94,.04))", border:`1px solid ${profit>=0?"rgba(16,185,129,.25)":"rgba(244,63,94,.25)"}`}}>
+              <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.5, marginBottom:3, textTransform:"uppercase"}}>{lang==="uz"?"Sof daromad":"Чистая прибыль"}</div>
+              <div style={{fontWeight:800, fontSize:24, color:profit>=0?"#10B981":"#F43F5E"}}>{profit>=0?"":"-"}{fp(Math.abs(profit))}</div>
+              <div style={{fontSize:12, color:tx3, marginTop:5, display:"flex", gap:12}}>
+                <span>📈 {lang==="uz"?"Tushum":"Выручка"}: <b style={{color:"#10B981"}}>{fp(revenue)}</b></span>
+                <span>📉 {lang==="uz"?"Xarajat":"Расход"}: <b style={{color:"#F43F5E"}}>{fp(totalExp)}</b></span>
+              </div>
+            </div>
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:9, padding:"0 20px 12px"}}>
+              {[
+                [lang==="uz"?"Tushum":"Выручка",   fp(revenue),  "#10B981","💰"],
+                [lang==="uz"?"Xarajatlar":"Расходы", fp(totalExp),"#F43F5E","💸"],
+                [lang==="uz"?"Mijozlar":"Клиентов",  new Set(statAppts.map(a=>a.clientId)).size,acc2,"👤"],
+                [lang==="uz"?"O'rtacha chek":"Средний чек", fp(statAppts.length?Math.round(revenue/statAppts.length):0),"#F59E0B","📊"],
+              ].map(([l,v,c,ic], i) => (
+                <div key={i} style={{...card, padding:13, animation:`popIn .4s ${i*.08}s cubic-bezier(.34,1.56,.64,1) both`}}>
+                  <div style={{display:"flex", alignItems:"center", gap:5, marginBottom:4}}><span style={{fontSize:14}}>{ic}</span><span style={{fontSize:10, color:tx3, fontWeight:600}}>{l}</span></div>
+                  <div style={{fontWeight:800, fontSize:16, color:c}}>{v}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{...card, margin:"0 20px 12px", padding:14}}>
+              <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10}}>
+                <div style={{fontWeight:700, fontSize:12, color:tx2}}>{lang==="uz"?"So'nggi 7 kun":"Последние 7 дней"}</div>
+                <div style={{display:"flex", gap:8, fontSize:10, fontWeight:600}}>
+                  <span style={{color:acc2}}>■ {lang==="uz"?"Tushum":"Выручка"}</span>
+                  <span style={{color:"#F43F5E"}}>■ {lang==="uz"?"Xarajat":"Расход"}</span>
+                </div>
+              </div>
+              <div style={{display:"flex", alignItems:"flex-end", gap:4, height:72}}>
+                {chartDs.map((d, i) => {
+                  const rh = Math.max(3, Math.round(cRev[i]/cMax*66));
+                  const eh = Math.max(cExp[i]>0?3:0, Math.round(cExp[i]/cMax*66));
+                  const isT2 = dkey(d) === todayK;
+                  return (
+                    <div key={i} style={{flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:3}}>
+                      <div style={{width:"100%", display:"flex", gap:2, alignItems:"flex-end", height:66}}>
+                        <div style={{flex:1, height:rh, borderRadius:"3px 3px 0 0", background:isT2?"linear-gradient(135deg,#FF6B9D,#C084FC)":"rgba(255,107,157,.25)", transition:"height .4s"}} />
+                        <div style={{flex:1, height:eh, borderRadius:"3px 3px 0 0", background:isT2?"#F43F5E":"rgba(244,63,94,.3)", transition:"height .4s"}} />
+                      </div>
+                      <span style={{fontSize:9, color:isT2?acc2:tx3, fontWeight:600}}>{(lang==="uz"?DU:DR)[d.getDay()]}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:9, padding:"0 20px"}}>
+              <div style={{...card, padding:13}}>
+                <div style={{fontSize:10, color:tx3, fontWeight:600, marginBottom:4}}>🏆 {lang==="uz"?"Top xizmat":"Топ услуга"}</div>
+                <div style={{fontWeight:700, fontSize:12, color:tx, lineHeight:1.35}}>{topSvc?topSvc[0]:"—"}</div>
+                {topSvc && <div style={{fontSize:11, color:acc2, fontWeight:600, marginTop:2}}>{topSvc[1]}×</div>}
+              </div>
+              <div style={{...card, padding:13}}>
+                <div style={{fontSize:10, color:tx3, fontWeight:600, marginBottom:4}}>📅 {lang==="uz"?"Band kun":"Загруженный день"}</div>
+                <div style={{fontWeight:700, fontSize:14, color:tx}}>{bDay?bDay[0]:"—"}</div>
+                {bDay && <div style={{fontSize:11, color:acc2, fontWeight:600, marginTop:2}}>{bDay[1]} {lang==="uz"?"yozuv":"зап."}</div>}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{margin:"0 20px 12px", borderRadius:16, padding:"13px 15px", background:"linear-gradient(135deg,rgba(244,63,94,.1),rgba(244,63,94,.04))", border:"1px solid rgba(244,63,94,.2)"}}>
+              <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.5, marginBottom:3, textTransform:"uppercase"}}>{lang==="uz"?"Jami xarajat":"Итого расходов"}</div>
+              <div style={{fontWeight:800, fontSize:22, color:"#F43F5E"}}>{fp(totalExp)}</div>
+            </div>
+            <button onClick={() => { const d=dkey(todayD); setExpForm({catId:"materials",desc:"",amtUzs:"",date:d}); setModal("expense"); }}
+              style={{display:"flex", alignItems:"center", justifyContent:"center", gap:8, margin:"0 20px 12px", width:"calc(100% - 40px)", height:44, borderRadius:13, border:"1.5px dashed rgba(244,63,94,.4)", background:"rgba(244,63,94,.06)", color:"#F43F5E", fontWeight:700, fontSize:14, cursor:"pointer", fontFamily:"inherit"}}>
+              ＋ {lang==="uz"?"Xarajat qo'shish":"Добавить расход"}
+            </button>
+            {catArr.length > 0 && (
+              <div style={{...card, margin:"0 20px 12px", padding:"13px 15px"}}>
+                <div style={{fontWeight:700, fontSize:13, marginBottom:11, color:tx2}}>{lang==="uz"?"Kategoriyalar bo'yicha":"По категориям"}</div>
+                {catArr.map(([cid, amt], i) => {
+                  const cat = EXP_CATS.find(c => c.id===cid) || EXP_CATS[EXP_CATS.length-1];
+                  const pct = totalExp>0 ? Math.round(amt/totalExp*100) : 0;
+                  return (
+                    <div key={cid} style={{marginBottom:i<catArr.length-1?11:0}}>
+                      <div style={{display:"flex", justifyContent:"space-between", marginBottom:3}}>
+                        <span style={{fontSize:13, fontWeight:600, color:tx}}>{cat.emoji} {lang==="uz"?cat.uz:cat.ru}</span>
+                        <span style={{fontSize:13, fontWeight:700, color:"#F43F5E"}}>{fp(amt)}</span>
+                      </div>
+                      <div style={{height:5, background:sf2, borderRadius:3, overflow:"hidden"}}>
+                        <div style={{height:"100%", width:pct+"%", background:"linear-gradient(90deg,#F43F5E,#FB7185)", borderRadius:3}} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <div style={{padding:"0 20px", display:"flex", flexDirection:"column", gap:8}}>
+              {statExps.length === 0
+                ? <div style={{textAlign:"center", color:tx3, padding:28, fontSize:13}}>{lang==="uz"?"Xarajatlar yo'q":"Расходов нет"}</div>
+                : statExps.sort((a,b) => b.dateKey.localeCompare(a.dateKey)).map((e, i) => {
+                  const cat = EXP_CATS.find(c => c.id===e.catId) || EXP_CATS[EXP_CATS.length-1];
+                  return (
+                    <div key={e.id} style={{...card, padding:"11px 13px", display:"flex", alignItems:"center", gap:11, animation:`popIn .4s ${i*.06}s cubic-bezier(.34,1.56,.64,1) both`}}>
+                      <div style={{width:38, height:38, borderRadius:11, background:"rgba(244,63,94,.1)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0}}>{cat.emoji}</div>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:600, fontSize:13, marginBottom:2, color:tx}}>{e.desc}</div>
+                        <div style={{fontSize:11, color:tx3}}>{lang==="uz"?cat.uz:cat.ru} · {fmtDate(e.dateKey, lang)}</div>
+                      </div>
+                      <div style={{display:"flex", flexDirection:"column", alignItems:"flex-end", gap:3}}>
+                        <div style={{fontWeight:800, fontSize:14, color:"#F43F5E"}}>{fp(e.amtUzs)}</div>
+                        <button onClick={() => setExpenses(prev => prev.filter(x => x.id!==e.id))} style={{fontSize:10, color:tx3, border:"none", background:"none", cursor:"pointer"}}>✕</button>
+                      </div>
+                    </div>
+                  );
+                })
+              }
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  // ── SETTINGS ──
+  function screenSettings() {
+    return (
+      <div style={{paddingBottom:80}}>
+        <div style={{fontWeight:800, fontSize:22, letterSpacing:-.5, padding:"14px 20px 8px", color:tx}}>{lang==="uz"?"Sozlamalar":"Настройки"}</div>
+
+        <div style={{padding:"0 20px 14px"}}>
+          <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:9, textTransform:"uppercase"}}>{lang==="uz"?"YO'NALISH":"НАПРАВЛЕНИЕ"}</div>
+          <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:7}}>
+            {Object.entries(PROFILES).map(([k,p2]) => (
+              <button key={k} onClick={() => { setProfile(k); showToast(p2.emoji+" "+(lang==="uz"?p2.uz:p2.ru),"✅"); }}
+                style={{borderRadius:13, border:`2px solid ${profile===k?"#FF6B9D":cb}`, background:profile===k?"rgba(255,107,157,.1)":cg, padding:"10px 8px", textAlign:"center", cursor:"pointer", fontFamily:"inherit"}}>
+                <div style={{fontSize:21, marginBottom:3}}>{p2.emoji}</div>
+                <div style={{fontSize:11, fontWeight:700, color:profile===k?acc2:tx, lineHeight:1.3}}>{lang==="uz"?p2.uz:p2.ru}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{padding:"0 20px 14px"}}>
+          <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:9, textTransform:"uppercase"}}>{lang==="uz"?"VALYUTA":"ВАЛЮТА"}</div>
+          <div style={{display:"flex", gap:8}}>
+            {[{k:"uzs",s:"so'm"},{k:"rub",s:"₽"},{k:"usd",s:"$"}].map(c => (
+              <button key={c.k} onClick={() => { setCurrency(c.k); showToast(c.k.toUpperCase(),"💱"); }}
+                style={{flex:1, height:54, borderRadius:12, border:`2px solid ${currency===c.k?"#FF6B9D":cb}`, background:currency===c.k?"rgba(255,107,157,.1)":cg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:2, cursor:"pointer", fontFamily:"inherit"}}>
+                <div style={{fontSize:18, fontWeight:800, color:currency===c.k?acc2:tx}}>{c.s}</div>
+                <div style={{fontSize:10, color:tx3, fontWeight:600}}>{c.k.toUpperCase()}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{padding:"0 20px 14px"}}>
+          <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:9, textTransform:"uppercase"}}>{lang==="uz"?"ISH VAQTI":"РАБОЧИЕ ЧАСЫ"}</div>
+          <div style={{...card, padding:"13px 15px", marginBottom:10}}>
+            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:11}}>
+              <span style={{fontSize:13, fontWeight:600, color:tx}}>{lang==="uz"?"Boshlanish":"Начало"}</span>
+              <input type="time" value={workCfg.start} onChange={e => setWorkCfg(s => ({...s, start:e.target.value}))} style={{...inp, width:110, textAlign:"center"}} />
+            </div>
+            <div style={{height:1, background:bd, marginBottom:11}} />
+            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+              <span style={{fontSize:13, fontWeight:600, color:tx}}>{lang==="uz"?"Tugash":"Конец"}</span>
+              <input type="time" value={workCfg.end} onChange={e => setWorkCfg(s => ({...s, end:e.target.value}))} style={{...inp, width:110, textAlign:"center"}} />
+            </div>
+          </div>
+          <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:9, textTransform:"uppercase"}}>{lang==="uz"?"DAM OLISH KUNLARI":"ВЫХОДНЫЕ ДНИ"}</div>
+          <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
+            {(lang==="uz"?DU:DR).map((d2, i) => {
+              const isOff2 = workCfg.offDays.includes(i);
+              return (
+                <button key={i} onClick={() => setWorkCfg(s => ({...s, offDays:isOff2?s.offDays.filter(x=>x!==i):[...s.offDays,i]}))}
+                  style={{padding:"6px 13px", borderRadius:11, border:`1.5px solid ${isOff2?"#F43F5E":bd}`, background:isOff2?"rgba(244,63,94,.1)":sf2, color:isOff2?"#F43F5E":tx2, fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"inherit"}}>
+                  {d2}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{padding:"0 20px 14px"}}>
+          <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:9, textTransform:"uppercase"}}>
+            {lang==="uz"?"MENING XIZMATLARIM":"МОИ УСЛУГИ"}
+          </div>
+          <div style={{display:"flex", flexDirection:"column", gap:7}}>
+            {myServices.map((s, i) => (
+              <div key={s.id} onClick={() => { setEditSvc({...s}); setModal("edit_svc"); }}
+                style={{...card, padding:"12px 14px", display:"flex", alignItems:"center", gap:12, cursor:"pointer"}}>
+                <div style={{width:32, height:32, borderRadius:10, background:"linear-gradient(135deg,rgba(192,132,252,.2),rgba(129,140,248,.2))", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0}}>
+                  {i+1}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:13, fontWeight:700, color:tx}}>{lang==="uz"?s.nameUz:s.name}</div>
+                  <div style={{fontSize:11, color:tx3, marginTop:2}}>
+                    ⏱ {s.dur} {lang==="uz"?"daq":"мин"} · {fp(s.price)}
+                  </div>
+                </div>
+                <span style={{fontSize:16, color:tx3}}>›</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{padding:"0 20px 14px"}}>
+          <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:9, textTransform:"uppercase"}}>{lang==="uz"?"INTERFEYS":"ИНТЕРФЕЙС"}</div>
+          <div style={{...card, overflow:"hidden"}}>
+            <div onClick={() => setDark(d => !d)} style={{display:"flex", alignItems:"center", padding:"12px 14px", gap:12, cursor:"pointer", borderBottom:`1px solid ${bd}`}}>
+              <span style={{fontSize:18, width:28, textAlign:"center"}}>{dark?"🌙":"☀️"}</span>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:600, fontSize:14, color:tx}}>{lang==="uz"?"Mavzu":"Тема"}</div>
+                <div style={{fontSize:12, color:tx3}}>{dark?(lang==="uz"?"Qorong'u":"Тёмная"):(lang==="uz"?"Yorug'":"Светлая")}</div>
+              </div>
+              <div style={{width:40, height:22, borderRadius:11, background:dark?acc2:sf2, position:"relative", border:`1.5px solid ${bd}`, transition:"background .3s"}}>
+                <div style={{position:"absolute", top:2, left:dark?20:2, width:14, height:14, borderRadius:"50%", background:"#fff", transition:"left .3s"}} />
+              </div>
+            </div>
+            <div style={{display:"flex", alignItems:"center", padding:"12px 14px", gap:12}}>
+              <span style={{fontSize:18, width:28, textAlign:"center"}}>🌐</span>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:600, fontSize:14, color:tx}}>{lang==="uz"?"Til":"Язык"}</div>
+                <div style={{fontSize:12, color:tx3}}>{lang==="ru"?"Русский":"O'zbekcha"}</div>
+              </div>
+              <div style={{display:"flex", gap:6}}>
+                {["ru","uz"].map(l => (
+                  <button key={l} onClick={() => setLang(l)} style={{padding:"4px 11px", borderRadius:10, border:`1.5px solid ${lang===l?acc:bd}`, background:lang===l?"rgba(255,107,157,.12)":sf2, color:lang===l?acc:tx2, fontWeight:700, fontSize:11, cursor:"pointer", fontFamily:"inherit"}}>{l.toUpperCase()}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{padding:"0 20px 20px"}}>
+          <div style={{...card, padding:"12px 14px", marginBottom:9, display:"flex", alignItems:"center", gap:11}}>
+            <span style={{fontSize:18}}>✦</span>
+            <div>
+              <div style={{fontWeight:600, fontSize:14, color:tx}}>GulCRM v4.1</div>
+              <div style={{fontSize:12, color:tx3}}>{PROFILES[profile].emoji} {lang==="uz"?PROFILES[profile].uz:PROFILES[profile].ru} · {appts.length} {lang==="uz"?"yozuv":"зап."} · {clients.length} {lang==="uz"?"mijoz":"кл."}</div>
+            </div>
+          </div>
+          <button onClick={async () => {
+            if (window.confirm(lang==="uz"?"Barcha ma'lumotlar o'chiriladi?":"Все данные будут удалены. Продолжить?")) {
+              try { localStorage.removeItem("bp6"); } catch(e) {}
+              setAppts(DEMO_AP); setClients(DEMO_CL); setSubs(DEMO_SB); setExpenses(DEMO_EX);
+              setMyServices(buildServices(profile));
+              showToast(lang==="uz"?"Ma'lumotlar tozalandi":"Данные сброshены","🗑️");
+            }
+          }} style={{...danBtn, marginTop:0}}>{lang==="uz"?"Ma'lumotlarni tozalash":"Сбросить данные"}</button>
+        </div>
+      </div>
+    );
+  }
+  // ── MARKETING ──
+  function screenMarketing() {
+    const prevHtml = mktPrev || (lang==="uz"
+      ? "Salom, <b>Dilnoza!</b> 💜<br>Yozuvingizni eslatamiz:<br><b>Ertaga soat 14:00da</b><br>Sizni kutamiz! ✨"
+      : "Привет, <b>Дилноза!</b> 💜<br>Напоминаем о записи<br><b>Завтра в 14:00</b><br>Ждём вас! ✨");
+    const aud = lang==="uz" ? ["Barcha mijozlar",">30 kun yo'q","Tug'ilgan kunlar"] : ["Все клиенты","Не были >30 дней","Дни рождения"];
+    const audColors = [["rgba(16,185,129,.15)","#10B981"],["rgba(245,158,11,.15)","#F59E0B"],["rgba(139,92,246,.15)","#8B5CF6"]];
+    const tmpls = lang==="uz" ? [
+      {name:"📅 Yozuv eslatmasi", count:"23 mijoz", text:"Salom, [Ism]! 💜 Yozuvingizni eslatamiz: [Sana] soat [Vaqt]da. Sizni kutamiz! ✨", prev:"Salom, <b>Dilnoza!</b> 💜<br>Yozuvingizni eslatamiz:<br><b>Ertaga soat 14:00da</b><br>Sizni kutamiz! ✨"},
+      {name:"🎁 Maxsus taklif",   count:"45 mijoz", text:"[Ism], keyingi muolajaga 20% chegirma! 🎉", prev:"<b>Dilnoza,</b> <b>20%</b> chegirma! 🎉"},
+      {name:"💜 Sog'inib qoldik", count:"12 mijoz", text:"[Ism], 30 kundan ko'proq yo'q edingiz. Sizni kutamiz! 🌸", prev:"<b>Dilnoza,</b> 30 kun yo'q edingiz.<br>Sizni kutamiz! 🌸"},
+    ] : [
+      {name:"📅 Напоминание о записи", count:"23 клиента",  text:"Привет, [Имя]! 💜 Напоминаем о записи [Дата] в [Время]. Ждём вас! ✨", prev:"Привет, <b>Дилноза!</b> 💜<br>Напоминаем о записи<br><b>Завтра в 14:00</b><br>Ждём вас! ✨"},
+      {name:"🎁 Спецпредложение",     count:"45 клиентов", text:"[Имя], скидка 20% на следующую процедуру! 🎉", prev:"<b>Дилноза,</b> скидка <b>20%</b>! 🎉"},
+      {name:"💜 Соскучились",         count:"12 клиентов", text:"[Имя], вас не было >30 дней. Ждём! 🌸", prev:"<b>Дилноза,</b> вас не было >30 дней.<br>Ждём! 🌸"},
+    ];
+    return (
+      <div style={{paddingBottom:80}}>
+        <div style={{fontWeight:800, fontSize:22, letterSpacing:-.5, padding:"14px 20px 8px", color:tx}}>{lang==="uz"?"Tarqatmalar":"Рассылки"}</div>
+        <div style={{padding:"0 20px 12px"}}>
+          <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:8, textTransform:"uppercase"}}>{lang==="uz"?"AUDITORIYA":"АУДИТОРИЯ"}</div>
+          <div style={{display:"flex", gap:6, flexWrap:"wrap"}}>
+            {aud.map((a, i) => (
+              <span key={i} onClick={() => setAudIdx(i)}
+                style={{display:"inline-block", fontSize:12, fontWeight:700, padding:"6px 12px", borderRadius:20,
+                  background:audColors[i][0], color:audColors[i][1], cursor:"pointer",
+                  opacity:audIdx===i?1:.5, transition:"all .2s"}}>
+                {a}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div style={{padding:"0 20px", display:"flex", flexDirection:"column", gap:9, marginBottom:13}}>
+          {tmpls.map((t2, i) => (
+            <div key={i} style={{...card, padding:14}}>
+              <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:7}}>
+                <div style={{fontWeight:700, fontSize:14, color:tx}}>{t2.name}</div>
+                <span style={{fontSize:11, color:tx3, background:sf2, padding:"3px 8px", borderRadius:20, fontWeight:600}}>👥 {t2.count}</span>
+              </div>
+              <div style={{fontSize:13, color:tx2, lineHeight:1.5, marginBottom:10}}>{t2.text}</div>
+              <button onClick={() => { setMktPrev(t2.prev); showToast(lang==="uz"?"Yuborildi!":"Отправлено!","✈️"); }}
+                style={{width:"100%", height:37, borderRadius:10, border:"none", background:"linear-gradient(135deg,#0088cc,#229ED9)", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6, fontFamily:"inherit"}}>
+                ✈️ {lang==="uz"?"Tarqatma yuborish":"Отправить рассылку"}
+              </button>
+            </div>
+          ))}
+        </div>
+        <div style={{padding:"0 20px 8px", fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, textTransform:"uppercase"}}>{lang==="uz"?"TELEGRAM KO'RINISHI":"ПРЕВЬЮ TELEGRAM"}</div>
+        <div style={{...card, margin:"0 20px", padding:14}}>
+          <div style={{display:"flex", alignItems:"center", gap:10, marginBottom:12}}>
+            <div style={{width:34, height:34, borderRadius:"50%", background:"linear-gradient(135deg,#0088cc,#229ED9)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, flexShrink:0}}>✈️</div>
+            <div><div style={{fontWeight:700, fontSize:13, color:tx}}>GulCRM Bot</div><div style={{fontSize:11, color:"#0088cc"}}>{lang==="uz"?"onlayn":"в сети"}</div></div>
+          </div>
+          <div style={{background:"linear-gradient(135deg,#0088cc,#229ED9)", borderRadius:"4px 16px 16px 16px", padding:"11px 13px", color:"#fff", fontSize:13, lineHeight:1.55, maxWidth:"85%"}}
+            dangerouslySetInnerHTML={{__html:prevHtml}} />
+          <div style={{fontSize:11, color:tx3, marginTop:5, textAlign:"right"}}>{lang==="uz"?"hozir":"сейчас"}</div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MODALS ───────────────────────────────────────────────────────────────
+
+  function modalAppt() {
+    const isEdit = !!editAppt;
+    const title = isEdit
+      ? (lang==="uz"?"Yozuvni tahrirlash":"Редактировать запись")
+      : (lang==="uz"?"Yangi yozuv":"Новая запись");
+
+    // Step indicator
+    const StepDots = () => (
+      <div style={{display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginBottom:18}}>
+        {[1,2].map(s => (
+          <div key={s} style={{display:"flex", alignItems:"center", gap:8}}>
+            <div style={{width: apptStep===s?28:22, height:22, borderRadius:11,
+              background: apptStep===s?"linear-gradient(135deg,#FF6B9D,#C084FC)": apptStep>s?"rgba(255,107,157,.25)":sf2,
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:11, fontWeight:700, color: apptStep>=s?"#fff":tx3,
+              transition:"all .25s"}}>
+              {apptStep>s ? "✓" : s}
+            </div>
+            {s<2 && <div style={{width:24, height:2, background: apptStep>s?"rgba(255,107,157,.35)":bd, borderRadius:1, transition:"background .3s"}} />}
+          </div>
+        ))}
+      </div>
+    );
+
+    // ── STEP 1: клиент + услуга ──
+    const Step1 = () => (
+      <>
+        <div style={{fontWeight:800, fontSize:18, marginBottom:4, color:tx}}>{title}</div>
+        <div style={{fontSize:12, color:tx3, marginBottom:16}}>{lang==="uz"?"Mijoz va xizmatni tanlang":"Выберите клиента и услугу"}</div>
+
+        {/* Client list */}
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:8}}>{lang==="uz"?"Mijoz":"Клиент"}</label>
+          <div style={{display:"flex", flexDirection:"column", gap:6, maxHeight:180, overflowY:"auto"}}>
+            {clients.map(c => {
+              const sel = form.clientId === c.id;
+              return (
+                <div key={c.id} onClick={() => setForm(f => ({...f, clientId:c.id}))}
+                  style={{display:"flex", alignItems:"center", gap:10, padding:"9px 12px", borderRadius:12,
+                    border:`1.5px solid ${sel?acc2:bd}`,
+                    background: sel?"rgba(255,107,157,.1)":sf2,
+                    cursor:"pointer", transition:"all .18s"}}>
+                  <Av l={c.av} c={c.avc} sz={34}/>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:13, fontWeight:700, color:sel?acc2:tx}}>{lang==="uz"?c.name_uz:c.name}</div>
+                    {c.phone && <div style={{fontSize:11, color:tx3}}>{c.phone}</div>}
+                  </div>
+                  {sel && <span style={{fontSize:16, color:acc2}}>✓</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Service chips */}
+        <div style={{marginBottom:16}}>
+          <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:8}}>{lang==="uz"?"Xizmat":"Услуга"}</label>
+          <div style={{display:"flex", flexDirection:"column", gap:6}}>
+            {myServices.map((s, i) => {
+              const sName = lang==="uz" ? s.nameUz : s.name;
+              const sel = form.svc === sName;
+              return (
+                <div key={s.id} onClick={() => setForm(f => ({...f, svc:sName, priceUzs:String(s.price), dur:s.dur}))}
+                  style={{display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 13px",
+                    borderRadius:12, border:`1.5px solid ${sel?acc2:bd}`,
+                    background: sel?"rgba(255,107,157,.1)":sf2,
+                    cursor:"pointer", transition:"all .18s"}}>
+                  <div style={{flex:1}}>
+                    <span style={{fontSize:13, fontWeight:sel?700:500, color:sel?acc2:tx}}>{sName}</span>
+                    <span style={{fontSize:11, color:tx3, marginLeft:8}}>⏱ {s.dur} {lang==="uz"?"daq":"мин"}</span>
+                  </div>
+                  <span style={{fontSize:12, fontWeight:700, color:sel?acc2:tx3}}>{fp(s.price)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <button onClick={() => {
+          if (!form.clientId) { showToast(lang==="uz"?"Mijozni tanlang":"Выберите клиента","⚠️"); return; }
+          if (!form.svc)      { showToast(lang==="uz"?"Xizmatni tanlang":"Выберите услугу","⚠️"); return; }
+          setApptStep(2);
+        }} style={priBtn}>{lang==="uz"?"Keyingisi →":"Далее →"}</button>
+        <button onClick={() => setModal(null)} style={secBtn}>{lang==="uz"?"Bekor qilish":"Отмена"}</button>
+      </>
+    );
+
+    // ── STEP 2: дата, время, длительность, статус ──
+    const Step2 = () => {
+      const nowWarn = !editAppt && form.date===todayK && (() => {
+        const [hh,mm] = form.time.split(":").map(Number);
+        const now2 = new Date();
+        return hh*60+mm <= now2.getHours()*60+now2.getMinutes();
+      })();
+
+      return (
+        <>
+          <div style={{fontWeight:800, fontSize:18, marginBottom:4, color:tx}}>{title}</div>
+          {/* Selected summary */}
+          <div style={{display:"flex", alignItems:"center", gap:10, padding:"10px 12px", borderRadius:12, background:sf2, marginBottom:16}}>
+            <Av l={(clients.find(c=>c.id===form.clientId)||clients[0]).av} c={(clients.find(c=>c.id===form.clientId)||clients[0]).avc} sz={34}/>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13, fontWeight:700, color:tx}}>{lang==="uz"?(clients.find(c=>c.id===form.clientId)||clients[0]).name_uz:(clients.find(c=>c.id===form.clientId)||clients[0]).name}</div>
+              <div style={{fontSize:11, color:acc2, marginTop:1}}>{form.svc} · {fp(+form.priceUzs)}</div>
+            </div>
+            <button onClick={() => setApptStep(1)} style={{fontSize:11, color:acc2, fontWeight:700, border:"none", background:"none", cursor:"pointer", fontFamily:"inherit"}}>
+              {lang==="uz"?"O'zgartirish":"Изменить"}
+            </button>
+          </div>
+
+          {/* Date + Time side by side */}
+          <div style={{marginBottom:13}}>
+            <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:7}}>{lang==="uz"?"Sana va vaqt":"Дата и время"}</label>
+            <div style={{display:"flex", gap:8}}>
+              <input type="date" value={form.date} onChange={e => setForm(f => ({...f, date:e.target.value}))} style={{...inp, flex:1.5}} min={editAppt?undefined:todayK}/>
+              <input type="time" value={form.time} onChange={e => setForm(f => ({...f, time:e.target.value}))} style={{...inp, flex:1}}/>
+            </div>
+            {nowWarn && <div style={{fontSize:11, color:"#F43F5E", marginTop:4}}>⛔ {lang==="uz"?"Bu vaqt o'tib ketgan":"Это время уже прошло"}</div>}
+          </div>
+
+          {/* Duration — крупные кнопки */}
+          <div style={{marginBottom:13}}>
+            <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:7}}>{lang==="uz"?"Davomiylik":"Длительность"}</label>
+            <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6}}>
+              {[[30,"30"],[45,"45"],[60,"1ч"],[90,"1.5ч"],[120,"2ч"],[150,"2.5ч"],[180,"3ч"]].map(([v,l2]) => (
+                <button key={v} onClick={() => setForm(f => ({...f, dur:v}))}
+                  style={{height:36, borderRadius:10, border:`1.5px solid ${form.dur===v?acc2:bd}`,
+                    background:form.dur===v?"rgba(255,107,157,.12)":sf2,
+                    color:form.dur===v?acc2:tx2, fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:"inherit"}}>
+                  {l2}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Status — только при редактировании существующей записи */}
+          {isEdit && (
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:7}}>{lang==="uz"?"To'lov":"Оплата"}</label>
+              <div style={{display:"flex", gap:7}}>
+                {[
+                  ["paid","#10B981","rgba(16,185,129,.1)",lang==="uz"?"✅ To'langan":"✅ Оплачено"],
+                  ["debt","#F59E0B","rgba(245,158,11,.1)",lang==="uz"?"⏳ Qarz":"⏳ Долг"],
+                  ["sub","#8B5CF6","rgba(139,92,246,.1)",lang==="uz"?"🎫 Abonement":"🎫 Абонемент"],
+                ].map(([s,c,bg2,lbl]) => (
+                  <button key={s} onClick={() => setForm(f => ({...f, status:s}))}
+                    style={{flex:1, height:44, borderRadius:11, border:`1.5px solid ${form.status===s?c:bd}`,
+                      background:form.status===s?bg2:sf2, color:form.status===s?c:tx2,
+                      fontWeight:700, fontSize:12, cursor:"pointer", fontFamily:"inherit", lineHeight:1.3}}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Для новой записи — подсказка */}
+          {!isEdit && (
+            <div style={{marginBottom:16, padding:"10px 13px", borderRadius:12, background:"rgba(255,107,157,.08)", border:"1px solid rgba(192,132,252,.2)"}}>
+              <div style={{fontSize:12, color:acc2, fontWeight:600}}>
+                💡 {lang==="uz"?"Mijoz ketganidan so'ng to'lov holati so'raladi":"Статус оплаты спросим после визита"}
+              </div>
+            </div>
+          )}
+
+          <button onClick={saveAppt} style={priBtn}>{lang==="uz"?"Saqlash ✓":"Сохранить ✓"}</button>
+          {isEdit && (
+            <button onClick={() => { setAppts(prev => prev.filter(a => a.id!==editAppt.id)); showToast(lang==="uz"?"O'chirildi!":"Удалено!","🗑️"); setModal(null); }} style={danBtn}>
+              🗑️ {lang==="uz"?"Yozuvni o'chirish":"Удалить запись"}
+            </button>
+          )}
+          <button onClick={() => setModal(null)} style={secBtn}>{lang==="uz"?"Bekor qilish":"Отмена"}</button>
+        </>
+      );
+    };
+
+    return (
+      <Modal isDark={dark} open={modal==="appt"} onClose={() => setModal(null)}>
+        <StepDots/>
+        {apptStep === 1 ? <Step1/> : <Step2/>}
+      </Modal>
+    );
+  }
+
+  function modalClient() {
+    if (!selClient) return null;
+    const cAp = appts.filter(a => a.clientId===selClient.id).sort((a,b) => b.dateKey.localeCompare(a.dateKey)).slice(0,5);
+    return (
+      <Modal isDark={dark} open={modal==="client"} onClose={() => setModal(null)}>
+        <div style={{textAlign:"center", paddingBottom:15, borderBottom:`1px solid ${bd}`, marginBottom:15}}>
+          <div style={{display:"flex", justifyContent:"center", marginBottom:9}}><Av l={selClient.av} c={selClient.avc} sz={62} /></div>
+          <div style={{fontWeight:800, fontSize:18, marginBottom:2, color:tx}}>{lang==="uz"?selClient.name_uz:selClient.name}</div>
+          <div style={{fontSize:12, color:tx2}}>{selClient.phone}</div>
+          {selClient.birthday && <div style={{fontSize:11, color:tx3, marginTop:2}}>🎂 {selClient.birthday}</div>}
+        </div>
+        <div style={{display:"flex", gap:8, marginBottom:15}}>
+          {[["📞",lang==="uz"?"Qo'ng'iroq":"Звонок","rgba(16,185,129,.12)","#10B981","rgba(16,185,129,.3)"],
+            ["✈️","Telegram","rgba(0,136,204,.12)","#0088cc","rgba(0,136,204,.3)"],
+            ["💬","WhatsApp","rgba(37,211,102,.12)","#25D366","rgba(37,211,102,.3)"]
+          ].map(([ic,lb,bg2,c,brd]) => (
+            <button key={lb} style={{flex:1, height:42, borderRadius:12, border:`1.5px solid ${brd}`, background:bg2, color:c, fontWeight:700, fontSize:11, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:4, fontFamily:"inherit"}}>
+              {ic} {lb}
+            </button>
+          ))}
+        </div>
+        <div style={{fontWeight:700, fontSize:13, marginBottom:8, color:tx2}}>{lang==="uz"?"Tashrif tarixi":"История визитов"}</div>
+        {cAp.length === 0
+          ? <div style={{color:tx3, fontSize:13, textAlign:"center", padding:14}}>{lang==="uz"?"Yozuvlar yo'q":"Записей нет"}</div>
+          : cAp.map((a, i) => (
+            <div key={a.id} style={{display:"flex", justifyContent:"space-between", alignItems:"center", padding:"8px 0", borderBottom:i<cAp.length-1?`1px solid ${bd}`:"none"}}>
+              <div>
+                <div style={{fontSize:13, fontWeight:600, color:tx}}>{lang==="uz"?a.svc_uz:a.svc}</div>
+                <div style={{fontSize:11, color:tx3, marginTop:1}}>{fmtDate(a.dateKey, lang)} · {a.time}</div>
+              </div>
+              <div style={{display:"flex", gap:5, alignItems:"center"}}>
+                <span style={{fontWeight:700, color:(STC[a.status]||STC.paid)[1], fontSize:12}}>{a.priceUzs>0?fp(a.priceUzs):"—"}</span>
+              </div>
+            </div>
+          ))
+        }
+        {selClient.note && <div style={{background:"rgba(245,158,11,.08)", border:"1px solid rgba(245,158,11,.2)", borderRadius:10, padding:"9px 11px", fontSize:12, color:"#F59E0B", marginTop:13}}>⚠️ {selClient.note}</div>}
+        <button onClick={() => setModal(null)} style={{...priBtn, marginTop:15}}>{lang==="uz"?"Yopish":"Закрыть"}</button>
+      </Modal>
+    );
+  }
+
+  function modalNewClient() {
+    return (
+      <Modal isDark={dark} open={modal==="new_cl"} onClose={() => setModal(null)}>
+        <div style={{fontWeight:800, fontSize:18, marginBottom:15, color:tx}}>{lang==="uz"?"Yangi mijoz":"Новый клиент"}</div>
+        <div style={{marginBottom:10}}><label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>{lang==="uz"?"Ismi":"Имя"} *</label><input value={clForm.name} onChange={e => setClForm(f => ({...f, name:e.target.value}))} style={inp} placeholder="Имя Фамилия" /></div>
+        <div style={{marginBottom:10}}><label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>{lang==="uz"?"Telefon":"Телефон"}</label><input value={clForm.phone} onChange={e => setClForm(f => ({...f, phone:e.target.value}))} style={inp} type="tel" placeholder="+998 90 000 00 00" /></div>
+        <div style={{marginBottom:10}}><label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>🎂 {lang==="uz"?"Tug'ilgan kun":"День рождения"}</label><input value={clForm.birthday} onChange={e => setClForm(f => ({...f, birthday:e.target.value}))} style={inp} type="date" /></div>
+        <div style={{marginBottom:14}}><label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>⚠️ {lang==="uz"?"Eslatma":"Заметка"}</label><textarea value={clForm.note} onChange={e => setClForm(f => ({...f, note:e.target.value}))} style={{...inp, height:68, padding:"10px 13px", resize:"none"}} placeholder={lang==="uz"?"Allergi...":"Аллергия..."} /></div>
+        <button onClick={saveClient} style={priBtn}>{lang==="uz"?"Saqlash":"Сохранить"}</button>
+        <button onClick={() => setModal(null)} style={secBtn}>{lang==="uz"?"Bekor qilish":"Отмена"}</button>
+      </Modal>
+    );
+  }
+
+  function modalCloseAppt() {
+    if (!closeAppt) return null;
+    const name = lang==="uz" ? closeAppt.clientName_uz : closeAppt.clientName;
+    const svc  = lang==="uz" ? closeAppt.svc_uz : closeAppt.svc;
+
+    function closeWith(status) {
+      setAppts(prev => prev.map(a =>
+        a.id === closeAppt.id ? {...a, status} : a
+      ));
+      setModal(null);
+      setCloseAppt(null);
+      const labels = {
+        paid: lang==="uz"?"To'langan ✅":"Оплачено ✅",
+        debt: lang==="uz"?"Qarz ⏳":"Долг ⏳",
+        sub:  lang==="uz"?"Abonement 🎫":"Абонемент 🎫",
+      };
+      showToast(labels[status] || status, "✅");
+    }
+
+    return (
+      <Modal isDark={dark} open={modal==="close_appt"} onClose={() => { setModal(null); setCloseAppt(null); }}>
+        {/* Header */}
+        <div style={{textAlign:"center", marginBottom:20}}>
+          <div style={{fontSize:36, marginBottom:8}}>👋</div>
+          <div style={{fontWeight:800, fontSize:18, color:tx, marginBottom:4}}>
+            {lang==="uz"?"Qanday bo'ldi?":"Как прошло?"}
+          </div>
+          <div style={{fontSize:13, color:tx2, lineHeight:1.5}}>
+            <b style={{color:tx}}>{name}</b>
+            <br/>{svc} · {closeAppt.time}
+            {closeAppt.priceUzs > 0 && <span style={{color:acc2}}> · {fp(closeAppt.priceUzs)}</span>}
+          </div>
+        </div>
+
+        {/* Separator */}
+        <div style={{height:1, background:bd, marginBottom:16}}/>
+
+        <div style={{fontSize:12, fontWeight:700, color:tx3, letterSpacing:.5, textTransform:"uppercase", marginBottom:12, textAlign:"center"}}>
+          {lang==="uz"?"To'lov holati qanday?":"Как оплатил(а) клиент?"}
+        </div>
+
+        {/* Big payment buttons */}
+        <div style={{display:"flex", flexDirection:"column", gap:10, marginBottom:8}}>
+          <button onClick={() => closeWith("paid")}
+            style={{width:"100%", height:56, borderRadius:16, border:"none",
+              background:"linear-gradient(135deg,#10B981,#34D399)",
+              color:"#fff", fontWeight:800, fontSize:16, cursor:"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+              boxShadow:"0 4px 16px rgba(16,185,129,.35)", fontFamily:"inherit"}}>
+            <span style={{fontSize:22}}>✅</span>
+            {lang==="uz"?"To'ladi (naqd / karta)":"Оплатил(а) (наличные / карта)"}
+          </button>
+
+          <button onClick={() => closeWith("sub")}
+            style={{width:"100%", height:56, borderRadius:16, border:"none",
+              background:"linear-gradient(135deg,#C084FC,#818CF8)",
+              color:"#fff", fontWeight:800, fontSize:16, cursor:"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+              boxShadow:"0 4px 16px rgba(139,92,246,.35)", fontFamily:"inherit"}}>
+            <span style={{fontSize:22}}>🎫</span>
+            {lang==="uz"?"Abonement":"Абонемент"}
+          </button>
+
+          <button onClick={() => closeWith("debt")}
+            style={{width:"100%", height:56, borderRadius:16,
+              border:"1.5px solid rgba(245,158,11,.4)",
+              background:"rgba(245,158,11,.08)",
+              color:"#F59E0B", fontWeight:800, fontSize:16, cursor:"pointer",
+              display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+              fontFamily:"inherit"}}>
+            <span style={{fontSize:22}}>⏳</span>
+            {lang==="uz"?"Keyin to'laydi (qarz)":"Оплатит позже (долг)"}
+          </button>
+        </div>
+
+        <button onClick={() => { setModal(null); setCloseAppt(null); }}
+          style={{...secBtn, marginTop:4}}>
+          {lang==="uz"?"Keyinroq":"Позже"}
+        </button>
+      </Modal>
+    );
+  }
+  function modalEditSvc() {
+    if (!editSvc) return null;
+    const durOpts = [15,30,45,60,90,120,150,180];
+    return (
+      <Modal isDark={dark} open={modal==="edit_svc"} onClose={() => setModal(null)}>
+        <div style={{fontWeight:800, fontSize:18, marginBottom:4, color:tx}}>
+          ✏️ {lang==="uz"?"Xizmatni tahrirlash":"Редактировать услугу"}
+        </div>
+        <div style={{fontSize:12, color:tx3, marginBottom:16}}>
+          {lang==="uz"?"Nom, narx va davomiylikni o'zgartiring":"Измените название, цену и длительность"}
+        </div>
+
+        {/* Name RU */}
+        <div style={{marginBottom:10}}>
+          <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>
+            {lang==="uz"?"Nomi (ru)":"Название (ru)"}
+          </label>
+          <input value={editSvc.name} onChange={e => setEditSvc(s => ({...s, name:e.target.value}))} style={inp} />
+        </div>
+
+        {/* Name UZ */}
+        <div style={{marginBottom:10}}>
+          <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>
+            {lang==="uz"?"Nomi (uz)":"Название (uz)"}
+          </label>
+          <input value={editSvc.nameUz} onChange={e => setEditSvc(s => ({...s, nameUz:e.target.value}))} style={inp} />
+        </div>
+
+        {/* Price */}
+        <div style={{marginBottom:14}}>
+          <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>
+            {lang==="uz"?"Narxi (so'mda)":"Цена (в сумах)"}
+          </label>
+          <div style={{display:"flex", alignItems:"center", gap:8}}>
+            <input type="number" value={editSvc.price}
+              onChange={e => setEditSvc(s => ({...s, price:+e.target.value}))}
+              style={{...inp, flex:1}} />
+            <span style={{fontWeight:700, color:tx2, fontSize:13, flexShrink:0}}>сум</span>
+          </div>
+          {editSvc.price > 0 && currency !== "uzs" && (
+            <div style={{fontSize:11, color:tx3, marginTop:3}}>≈ {fp(editSvc.price)}</div>
+          )}
+        </div>
+
+        {/* Duration */}
+        <div style={{marginBottom:18}}>
+          <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:7}}>
+            {lang==="uz"?"Davomiylik":"Длительность"}
+          </label>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6}}>
+            {durOpts.map(v => (
+              <button key={v} onClick={() => setEditSvc(s => ({...s, dur:v}))}
+                style={{height:36, borderRadius:10,
+                  border:`1.5px solid ${editSvc.dur===v?acc2:bd}`,
+                  background:editSvc.dur===v?"rgba(255,107,157,.12)":sf2,
+                  color:editSvc.dur===v?acc2:tx2,
+                  fontWeight:600, fontSize:12, cursor:"pointer", fontFamily:"inherit"}}>
+                {v < 60 ? v+"'" : (v/60)+(v%60?"ч"+v%60+"'":"ч")}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button onClick={() => {
+          if (!editSvc.name.trim()) { showToast(lang==="uz"?"Nomni kiriting":"Введите название","⚠️"); return; }
+          setMyServices(prev => prev.map(s => s.id===editSvc.id ? {...editSvc} : s));
+          showToast(lang==="uz"?"Xizmat yangilandi!":"Услуга обновлена!","✅");
+          setModal(null);
+        }} style={priBtn}>{lang==="uz"?"Saqlash":"Сохранить"}</button>
+        <button onClick={() => setModal(null)} style={secBtn}>{lang==="uz"?"Bekor qilish":"Отмена"}</button>
+      </Modal>
+    );
+  }
+
+  function modalTg() {
+    return (
+      <Modal isDark={dark} open={modal==="tg"} onClose={() => setModal(null)}>
+        <div style={{fontWeight:800, fontSize:18, marginBottom:13, color:tx}}>📨 Telegram</div>
+        <div style={{background:sf2, borderRadius:11, padding:13, fontSize:13, lineHeight:1.6, marginBottom:13, border:`1px solid ${cb}`, whiteSpace:"pre-line", color:tx}}>{tgMsg}</div>
+        <button onClick={() => { setModal(null); showToast(lang==="uz"?"Yuborildi!":"Отправлено!","✈️"); }}
+          style={{width:"100%", height:40, borderRadius:11, border:"none", background:"linear-gradient(135deg,#0088cc,#229ED9)", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:7, marginBottom:8, fontFamily:"inherit"}}>
+          ✈️ {lang==="uz"?"Telegramda ochish":"Открыть в Telegram"}
+        </button>
+        <button onClick={() => setModal(null)} style={{...secBtn, marginTop:0}}>{lang==="uz"?"Bekor qilish":"Отмена"}</button>
+      </Modal>
+    );
+  }
+
+  function modalExpense() {
+    return (
+      <Modal isDark={dark} open={modal==="expense"} onClose={() => setModal(null)}>
+        <div style={{fontWeight:800, fontSize:18, marginBottom:15, color:tx}}>💸 {lang==="uz"?"Xarajat qo'shish":"Добавить расход"}</div>
+        <div style={{marginBottom:12}}>
+          <label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:7}}>{lang==="uz"?"Kategoriya":"Категория"}</label>
+          <div style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:6}}>
+            {EXP_CATS.map(cat => (
+              <button key={cat.id} onClick={() => setExpForm(f => ({...f, catId:cat.id}))}
+                style={{borderRadius:11, border:`1.5px solid ${expForm.catId===cat.id?"#F43F5E":bd}`, background:expForm.catId===cat.id?"rgba(244,63,94,.1)":sf2, padding:"8px 4px", display:"flex", flexDirection:"column", alignItems:"center", gap:2, cursor:"pointer", fontFamily:"inherit"}}>
+                <span style={{fontSize:19}}>{cat.emoji}</span>
+                <span style={{fontSize:9, fontWeight:600, color:expForm.catId===cat.id?"#F43F5E":tx3, textAlign:"center", lineHeight:1.2}}>{lang==="uz"?cat.uz:cat.ru}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{marginBottom:10}}><label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>{lang==="uz"?"Tavsif":"Описание"}</label><input value={expForm.desc} onChange={e => setExpForm(f => ({...f, desc:e.target.value}))} style={inp} placeholder={lang==="uz"?"Gel-lak OPI...":"Гель-лаки OPI..."} /></div>
+        <div style={{marginBottom:10}}><label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>{lang==="uz"?"Summa (so'mda)":"Сумма (в сумах)"}</label>
+          <input type="number" value={expForm.amtUzs} onChange={e => setExpForm(f => ({...f, amtUzs:e.target.value}))} style={inp} placeholder="0" />
+          {+expForm.amtUzs > 0 && currency !== "uzs" && <div style={{fontSize:11, color:tx3, marginTop:3}}>≈ {fp(+expForm.amtUzs)}</div>}
+        </div>
+        <div style={{marginBottom:15}}><label style={{fontSize:12, fontWeight:600, color:tx2, display:"block", marginBottom:5}}>{lang==="uz"?"Sana":"Дата"}</label><input type="date" value={expForm.date} onChange={e => setExpForm(f => ({...f, date:e.target.value}))} style={inp} /></div>
+        <button onClick={saveExp} style={{...priBtn, background:"linear-gradient(135deg,#F43F5E,#FB7185)"}}>{lang==="uz"?"Saqlash":"Сохранить расход"}</button>
+        <button onClick={() => setModal(null)} style={secBtn}>{lang==="uz"?"Bekor qilish":"Отмена"}</button>
+      </Modal>
+    );
+  }
+
+  // ── MAIN RENDER ──
+  return (
+    <div style={{minHeight:"100vh", background:dark?"#050210":"#EEE0F8", display:"flex", alignItems:"center", justifyContent:"center"}}>
+      <style>{`@keyframes slideUp{from{transform:translateY(80%);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes slideDown{from{transform:translateY(-16px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}@keyframes popIn{0%{opacity:0;transform:scale(.85)}60%{transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}@keyframes ping{0%{transform:scale(1);opacity:.9}70%{transform:scale(2.5);opacity:0}100%{transform:scale(2.5);opacity:0}}@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}@keyframes glow-pulse{0%,100%{box-shadow:0 0 20px rgba(255,107,157,.3)}50%{box-shadow:0 0 40px rgba(255,107,157,.5)}}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}*::-webkit-scrollbar{display:none}`}</style>
+      <div style={{width:"min(390px,100vw)", height:"min(844px,100vh)", background:bg, borderRadius:"clamp(0px,4vw,46px)", overflow:"hidden", position:"relative", boxShadow:"0 50px 120px rgba(0,0,0,.8),0 0 0 14px rgba(13,6,32,.98),0 0 0 15px rgba(255,107,157,.06),0 0 0 28px rgba(0,0,0,.7)", display:"flex", flexDirection:"column", transition:"background .4s"}}>
+        {toast && <Toast msg={toast.msg} icon={toast.icon} />}
+        <div style={{height:42, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 22px", flexShrink:0}}>
+          <span style={{fontSize:15, fontWeight:600, color:tx}}>{new Date().toLocaleTimeString("ru",{hour:"2-digit",minute:"2-digit"})}</span>
+          <span style={{fontSize:12}}>📶 🔋</span>
+        </div>
+        <div style={{padding:"2px 18px 8px", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0}}>
+          <div onClick={() => setLicScreen(true)} style={{display:"flex", alignItems:"center", gap:7, cursor:"pointer"}}>
+            <div style={{fontWeight:800, fontSize:17, background:"linear-gradient(135deg,#FF6B9D,#C084FC)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent"}}>✦ GulCRM {PROFILES[profile].emoji}</div>
+            {checkLicense(license)
+              ? <span style={{fontSize:10,fontWeight:700,background:"rgba(52,211,153,.15)",color:"#34D399",padding:"2px 8px",borderRadius:10,border:"1px solid rgba(52,211,153,.3)"}}>PRO</span>
+              : <span style={{fontSize:10,fontWeight:700,background:"rgba(255,107,157,.15)",color:"#FF6B9D",padding:"2px 8px",borderRadius:10,border:"1px solid rgba(255,107,157,.35)"}}>
+                  {isTrialActive() ? trialDaysLeft()+"д" : "⚠️"}
+                </span>
+            }
+          </div>
+          <div style={{display:"flex", gap:6, alignItems:"center"}}>
+            <button onClick={() => setLang(l => l==="ru"?"uz":"ru")} style={{height:27, padding:"0 11px", borderRadius:13, border:`1.5px solid ${bd}`, background:sf, fontSize:11, fontWeight:700, color:tx2, cursor:"pointer", fontFamily:"inherit"}}>{lang.toUpperCase()}</button>
+            <div onClick={() => setDark(d => !d)} style={{width:40, height:22, borderRadius:11, background:dark?acc2:"rgba(0,0,0,.1)", border:`1.5px solid ${bd}`, cursor:"pointer", position:"relative", transition:"background .3s"}}>
+              <div style={{position:"absolute", top:2, left:dark?20:2, width:14, height:14, borderRadius:"50%", background:dark?"#fff":acc2, transition:"left .3s", display:"flex", alignItems:"center", justifyContent:"center", fontSize:8}}>{dark?"🌙":"☀️"}</div>
+            </div>
+          </div>
+        </div>
+        <div style={{flex:1, overflow:"hidden", position:"relative"}}>
+          {/* License / paywall overlay */}
+          {licScreen && screenLicense()}
+          {!licScreen && !checkLicense(license) && !isTrialActive() && (
+            // Auto-show paywall when trial expired
+            <div style={{position:"absolute",inset:0,zIndex:150}} ref={el=>{if(el)setLicScreen(true)}}/>
+          )}
+          <div style={{position:"absolute", inset:0, overflowY:"auto"}}>
+            {screen === "dashboard" && screenDashboard()}
+            {screen === "calendar"  && screenCalendar()}
+            {screen === "clients"   && screenClients()}
+            {screen === "finance"   && screenFinance()}
+            {screen === "stats"     && screenStats()}
+            {screen === "settings"  && screenSettings()}
+            {screen === "marketing" && screenMarketing()}
+          </div>
+          {(screen === "calendar" || screen === "dashboard") && canAddAny && (
+            <button onClick={() => { if(screen==="dashboard") setScreen("calendar"); openAdd(); }} style={{position:"absolute", bottom:14, right:14, width:58, height:58, borderRadius:"50%", border:"none", background:grad, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:glow+",0 0 0 4px rgba(255,107,157,.12)", cursor:"pointer", zIndex:10, animation:"glow-pulse 2.5s ease-in-out infinite", transition:"transform .2s cubic-bezier(.34,1.56,.64,1)"}}
+              onPointerDown={e=>e.currentTarget.style.transform="scale(.9)"}
+              onPointerUp={e=>e.currentTarget.style.transform="scale(1)"}
+              onPointerLeave={e=>e.currentTarget.style.transform="scale(1)"}>
+              <Plus size={24} strokeWidth={2.5}/></button>
+          )}
+          {modalEditSvc()}
+          {modalCloseAppt()}
+          {modalAppt()}
+          {modalClient()}
+          {modalNewClient()}
+          {modalTg()}
+          {modalExpense()}
+        </div>
+        <div style={{height:68, background:dark?"rgba(13,6,32,.96)":"rgba(255,245,251,.96)", backdropFilter:"blur(20px)", borderTop:"1px solid "+bd, display:"flex", alignItems:"center", justifyContent:"space-around", padding:"0 4px 6px", flexShrink:0, boxShadow:dark?"0 -6px 24px rgba(0,0,0,.4)":"0 -4px 20px rgba(192,84,252,.06)", transition:"all .4s"}}>
+          {NAV.map(n => (
+            <div key={n.id} onClick={() => setScreen(n.id)} style={{display:"flex", flexDirection:"column", alignItems:"center", gap:3, cursor:"pointer", padding:"6px 10px", borderRadius:16, minWidth:54,
+                background:screen===n.id?(dark?"rgba(255,107,157,.12)":"rgba(224,64,154,.07)"):"transparent",
+                transition:"all .25s cubic-bezier(.34,1.56,.64,1)",
+                transform:screen===n.id?"scale(1.06)":"scale(1)"}}>
+              <span style={{color:screen===n.id?acc:tx3, display:"flex", transition:"all .25s",
+                filter:screen===n.id?("drop-shadow(0 0 6px "+acc+"99)"):"none",
+                transform:screen===n.id?"scale(1.1)":"scale(1)"}}>
+                {n.ic}
+              </span>
+              <span style={{fontSize:9, fontWeight:700, color:screen===n.id?acc:tx3, textAlign:"center", letterSpacing:.2, transition:"color .2s"}}>
+                {lang==="uz"?n.uz:n.ru}
+              </span>
+              {screen===n.id&&<div style={{width:16,height:2,borderRadius:2,background:grad}}/>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+    setTimeout(()=>{
+      const l=document.getElementById('loading');
+      if(l){l.style.opacity='0';setTimeout(()=>l.remove(),600);}
+    },1000);
+  </script>
+</body>
+</html>
