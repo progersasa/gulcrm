@@ -40,8 +40,8 @@
     }, 2000);
   </script>
   <div id="root"></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script type="text/babel" data-presets="react">
     const { useState, useEffect, useRef } = React;
@@ -418,12 +418,6 @@ function App() {
 
   // ── storage (localStorage) ──
   const saveRef = useRef(null);
-  // Hide loading screen when app mounts
-  useEffect(() => {
-    const l = document.getElementById('loading');
-    if(l) { l.style.opacity='0'; setTimeout(()=>l.remove(),600); }
-  }, []);
-
   useEffect(() => {
     try {
       const saved = localStorage.getItem("bp6");
@@ -691,6 +685,12 @@ function App() {
   const danBtn = {width:"100%", height:46, borderRadius:14, border:"1.5px solid rgba(251,113,133,.3)", background:"rgba(251,113,133,.08)", color:"#FB7185", fontSize:14, fontWeight:600, cursor:"pointer", marginTop:4, fontFamily:"inherit"};
 
   // ── ONBOARDING ────────────────────────────────────────────────────────────
+  // Hide loading when App mounts - must be after all other hooks
+  useEffect(() => {
+    const l = document.getElementById('loading');
+    if(l) { l.style.opacity='0'; setTimeout(()=>{ if(l.parentNode) l.parentNode.removeChild(l); },600); }
+  }, []);
+
   // ── LOGIN SCREEN ────────────────────────────────────────────────────────────
   if (step === "login") {
     const BOT_USERNAME = "gulcrm_bot"; // Замени на username своего бота когда создашь
