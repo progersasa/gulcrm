@@ -23,27 +23,120 @@
   </style>
 </head>
 <body>
-  <div id="loading">
-    <div class="ld-logo">🌸</div>
-    <div class="ld-name">GulCRM</div>
-    <div class="ld-sub" id="ld-status">Загрузка...</div>
-    <div class="ld-spin"></div>
+  <!-- Login screen (pure HTML, shows before React loads) -->
+  <div id="login-screen" style="position:fixed;inset:0;background:#0D0620;display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;">
+    <div style="width:100%;max-width:380px;text-align:center;">
+      <div style="font-size:64px;margin-bottom:16px;animation:ldf 2s ease-in-out infinite">🌸</div>
+      <div style="font-size:32px;font-weight:900;background:linear-gradient(135deg,#FF6B9D,#C084FC);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px;">GulCRM</div>
+      <div style="font-size:14px;color:#7A5F8A;margin-bottom:32px;">Beauty Master CRM</div>
+
+      <div id="login-card" style="background:#1C1035;border-radius:24px;padding:28px;border:1px solid rgba(255,107,157,.15);">
+        <div style="font-size:18px;font-weight:800;color:#FFF0F8;margin-bottom:8px;">Добро пожаловать 👋</div>
+        <div style="font-size:13px;color:#7A5F8A;margin-bottom:24px;">Войдите чтобы начать работу</div>
+
+        <!-- Telegram Login Widget -->
+        <div id="tg-widget" style="display:flex;justify-content:center;min-height:50px;margin-bottom:16px;"></div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin:16px 0;">
+          <div style="flex:1;height:1px;background:rgba(255,255,255,.06)"></div>
+          <span style="font-size:12px;color:#4A3560">или</span>
+          <div style="flex:1;height:1px;background:rgba(255,255,255,.06)"></div>
+        </div>
+
+        <button id="skip-btn" style="width:100%;height:46px;border-radius:14px;border:1.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#4A3560;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
+          Продолжить без входа
+        </button>
+      </div>
+      <div style="font-size:11px;color:#3A2550;margin-top:16px;">Ваши данные хранятся только на вашем устройстве</div>
+    </div>
   </div>
+
+  <!-- Loading overlay (shown while React compiles) -->
+  <div id="loading" style="position:fixed;inset:0;background:#0D0620;display:none;align-items:center;justify-content:center;z-index:9998;">
+    <div style="text-align:center;">
+      <div style="font-size:48px;animation:ldf 2s ease-in-out infinite">🌸</div>
+      <div style="font-size:14px;color:#7A5F8A;margin-top:16px;" id="ld-status">Загрузка приложения...</div>
+      <div style="width:28px;height:28px;border-radius:50%;border:3px solid rgba(255,107,157,.2);border-top-color:#FF6B9D;animation:spin 1s linear infinite;margin:12px auto;"></div>
+    </div>
+  </div>
+
   <script>
-    // Show progress while Babel compiles
-    const msgs = ['Загрузка...', 'Инициализация...', 'Почти готово...', 'Запуск...'];
-    let mi = 0;
-    const st = document.getElementById('ld-status');
-    const iv = setInterval(()=>{
-      mi = (mi+1) % msgs.length;
-      if(st) st.textContent = msgs[mi];
-    }, 2000);
+    const BOT_USERNAME = "gulcrm_bot";
+
+    function onTelegramAuth(user) {
+      // Save TG user to localStorage
+      localStorage.setItem("gulcrm_tguser", JSON.stringify({
+        id: user.id,
+        name: user.first_name + (user.last_name ? " " + user.last_name : ""),
+        username: user.username || "",
+        photo: user.photo_url || ""
+      }));
+      startApp();
+    }
+
+    function startApp() {
+      // Hide login, show loading
+      document.getElementById("login-screen").style.display = "none";
+      const loading = document.getElementById("loading");
+      loading.style.display = "flex";
+      // Load Babel + React scripts
+      loadScripts();
+    }
+
+    document.getElementById("skip-btn").onclick = function() {
+      localStorage.removeItem("gulcrm_tguser");
+      startApp();
+    };
+
+    // Check if already logged in
+    window.addEventListener('load', function() {
+      const saved = localStorage.getItem("gulcrm_tguser");
+      const appData = localStorage.getItem("bp6");
+      if (saved && appData) {
+        // Already logged in - go straight to app
+        startApp();
+        return;
+      }
+
+      // Show Telegram widget
+      window.onTelegramAuth = onTelegramAuth;
+      const script = document.createElement('script');
+      script.src = 'https://telegram.org/js/telegram-widget.js?22';
+      script.setAttribute('data-telegram-login', BOT_USERNAME);
+      script.setAttribute('data-size', 'large');
+      script.setAttribute('data-radius', '14');
+      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+      script.setAttribute('data-request-access', 'write');
+      script.async = true;
+      document.getElementById('tg-widget').appendChild(script);
+    });
+
+    function loadScripts() {
+      const scripts = [
+        'https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js'
+      ];
+      let i = 0;
+      function loadNext() {
+        if (i >= scripts.length) {
+          // All loaded - now transform and run Babel script
+          const babelScript = document.getElementById('app-script');
+          babelScript.type = 'text/babel';
+          Babel.transformScriptTags();
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = scripts[i++];
+        s.onload = loadNext;
+        document.head.appendChild(s);
+      }
+      loadNext();
+    }
   </script>
   <div id="root"></div>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <script type="text/babel" data-presets="react">
+
+  <script id="app-script" type="text/plain" data-presets="react">
     const { useState, useEffect, useRef } = React;
 
     // Inline SVG icons
@@ -340,6 +433,13 @@ function buildServices(profileKey) {
 function App() {
 
   // ── settings & ui state ──
+  // Read TG user from localStorage (set before React loaded)
+  const [tgUser] = useState(() => {
+    try {
+      const u = localStorage.getItem("gulcrm_tguser");
+      return u ? JSON.parse(u) : null;
+    } catch(e) { return null; }
+  });
   const [step,       setStep]       = useState("onboarding");
   const [profile,    setProfile]    = useState("nail");
   const [license,    setLicense]    = useState(null);
@@ -688,6 +788,7 @@ function App() {
           <div style={{padding:"28px 22px 18px", textAlign:"center", background:"linear-gradient(135deg,rgba(192,132,252,.15),rgba(129,140,248,.08))"}}>
             <div style={{fontSize:36, marginBottom:6}}>✦</div>
             <div style={{fontWeight:800, fontSize:24, background:"linear-gradient(135deg,#FF6B9D,#C084FC,#818CF8)", backgroundSize:"200%", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", marginBottom:8, animation:"shimmer 3s linear infinite"}}>GulCRM</div>
+            {tgUser && <div style={{fontSize:14, color:"#C4A8D4", marginBottom:4}}>👋 {tgUser.name}</div>}
             <div style={{fontSize:13, color:tx2, lineHeight:1.6}}>{lang==="ru"?"Умный CRM для beauty-мастеров":"Beauty ustalari uchun aqlli CRM"}</div>
             <div style={{display:"flex", justifyContent:"center", gap:8, marginTop:12}}>
               {["ru","uz"].map(l => (
@@ -2340,10 +2441,13 @@ function App() {
 
     // Hide loading only after React actually mounts
     ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
-    setTimeout(()=>{
-      const l=document.getElementById('loading');
-      if(l){l.style.opacity='0';setTimeout(()=>l.remove(),600);}
-    },8000);
+    // Hide loading when React renders
+    const _origRAF = requestAnimationFrame;
+    function hideLoading() {
+      const l = document.getElementById('loading');
+      if(l) { l.style.opacity='0'; l.style.transition='opacity .5s'; setTimeout(()=>{ if(l.parentNode) l.parentNode.removeChild(l); }, 500); }
+    }
+    setTimeout(hideLoading, 500);
   </script>
 </body>
 </html>
