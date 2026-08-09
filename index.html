@@ -2389,8 +2389,8 @@ function App() {
           </div>
         </div>
         <div style={{flex:1, overflow:"hidden", position:"relative"}}>
-          {/* License screen - shown when clicked or trial expired */}
-          {(licScreen || (!checkLicense(license) && !isTrialActive())) && screenLicense()}
+          {/* License screen - shown only when badge clicked */}
+          {licScreen && screenLicense()}
           <div style={{position:"absolute", inset:0, overflowY:"auto"}}>
             {screen === "dashboard" && screenDashboard()}
             {screen === "calendar"  && screenCalendar()}
