@@ -34,14 +34,36 @@
         <div style="font-size:18px;font-weight:800;color:#FFF0F8;margin-bottom:8px;">Добро пожаловать 👋</div>
         <div style="font-size:13px;color:#7A5F8A;margin-bottom:24px;">Войдите чтобы начать работу</div>
 
-        <!-- Telegram Login Widget -->
-        <div id="tg-widget" style="display:flex;justify-content:center;min-height:50px;margin-bottom:16px;"></div>
+        <!-- Telegram Login Widget (web) -->
+        <div id="tg-widget" style="display:flex;justify-content:center;min-height:50px;margin-bottom:12px;"></div>
 
-        <div style="display:flex;align-items:center;gap:12px;margin:16px 0;">
+        <!-- Telegram via bot code (APK) -->
+        <div id="tg-code-section" style="display:none;margin-bottom:12px;">
+          <button id="tg-open-btn" style="width:100%;height:50px;border-radius:14px;border:none;background:linear-gradient(135deg,#0088cc,#229ED9);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
+            ✈️ Войти через Telegram
+          </button>
+          <div id="tg-code-input" style="display:none;">
+            <div style="font-size:12px;color:#7A5F8A;margin-bottom:8px;text-align:center;">Введите код из бота @gulcrm_bot</div>
+            <input id="auth-code" maxlength="6" placeholder="000000"
+              style="width:100%;height:50px;border-radius:14px;border:1.5px solid rgba(255,107,157,.3);background:#241540;color:#FFF0F8;font-size:24px;font-weight:800;text-align:center;letter-spacing:6px;outline:none;font-family:monospace;"/>
+            <button id="verify-code-btn" style="width:100%;height:46px;border-radius:14px;border:none;background:linear-gradient(135deg,#FF6B9D,#C084FC);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;">
+              Подтвердить →
+            </button>
+            <div id="auth-error" style="font-size:12px;color:#FB7185;text-align:center;margin-top:6px;display:none;"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;margin:12px 0;">
           <div style="flex:1;height:1px;background:rgba(255,255,255,.06)"></div>
           <span style="font-size:12px;color:#4A3560">или</span>
           <div style="flex:1;height:1px;background:rgba(255,255,255,.06)"></div>
         </div>
+
+        <!-- Google Sign-In (APK only) -->
+        <button id="google-btn" style="width:100%;height:50px;border-radius:14px;border:none;background:#fff;color:#1a1a1a;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:none;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;">
+          <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Войти через Google
+        </button>
 
         <button id="skip-btn" style="width:100%;height:46px;border-radius:14px;border:1.5px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#4A3560;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">
           Продолжить без входа
@@ -82,6 +104,124 @@
       // Load Babel + React scripts
       loadScripts();
     }
+
+    const BOT_API = "https://gulcrm.onrender.com";
+    const DEVICE_ID_KEY = "gulcrm_device_id";
+
+    function getOrCreateDeviceId() {
+      let id = localStorage.getItem(DEVICE_ID_KEY);
+      if (!id) {
+        const nav = window.navigator;
+        const raw = [nav.userAgent, nav.language, screen.width, screen.height].join('|');
+        let hash = 0;
+        for (let i = 0; i < raw.length; i++) {
+          hash = ((hash << 5) - hash) + raw.charCodeAt(i); hash |= 0;
+        }
+        id = Math.abs(hash).toString(36).toUpperCase().slice(0, 8);
+        localStorage.setItem(DEVICE_ID_KEY, id);
+      }
+      return id;
+    }
+
+    // Telegram via bot code
+    function setupTelegramCodeAuth() {
+      const deviceId = getOrCreateDeviceId();
+      const openBtn = document.getElementById('tg-open-btn');
+      const codeInput = document.getElementById('tg-code-input');
+      const verifyBtn = document.getElementById('verify-code-btn');
+      const authError = document.getElementById('auth-error');
+
+      if (openBtn) {
+        openBtn.onclick = function() {
+          // Open bot with auth request
+          const url = 'https://t.me/gulcrm_bot?start=auth_' + deviceId;
+          window.open(url, '_blank');
+          // Show code input after delay
+          setTimeout(() => {
+            codeInput.style.display = 'block';
+            openBtn.style.opacity = '0.6';
+            openBtn.textContent = '✅ Бот открыт — введите код';
+          }, 1000);
+        };
+      }
+
+      if (verifyBtn) {
+        verifyBtn.onclick = async function() {
+          const code = document.getElementById('auth-code').value.trim();
+          if (code.length !== 6) {
+            authError.textContent = 'Введите 6-значный код';
+            authError.style.display = 'block';
+            return;
+          }
+          verifyBtn.textContent = 'Проверка...';
+          verifyBtn.disabled = true;
+          authError.style.display = 'none';
+
+          try {
+            const resp = await fetch(BOT_API + '/verify_auth', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({device_id: deviceId, code: code})
+            });
+            const data = await resp.json();
+            if (data.ok) {
+              localStorage.setItem("gulcrm_tguser", JSON.stringify(data.user));
+              startApp();
+            } else {
+              authError.textContent = data.error === 'Code expired'
+                ? 'Код устарел. Запросите новый.'
+                : 'Неверный код. Попробуйте снова.';
+              authError.style.display = 'block';
+              verifyBtn.textContent = 'Подтвердить →';
+              verifyBtn.disabled = false;
+            }
+          } catch(e) {
+            authError.textContent = 'Ошибка соединения. Проверьте интернет.';
+            authError.style.display = 'block';
+            verifyBtn.textContent = 'Подтвердить →';
+            verifyBtn.disabled = false;
+          }
+        };
+      }
+    }
+
+    // Google Sign-In (Android only via Capacitor plugin)
+    async function googleSignIn() {
+      try {
+        if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+          const { GoogleAuth } = window.Capacitor.Plugins;
+          const result = await GoogleAuth.signIn();
+          localStorage.setItem("gulcrm_tguser", JSON.stringify({
+            id: result.id,
+            name: result.name,
+            username: result.email,
+            photo: result.photo,
+            provider: "google"
+          }));
+          startApp();
+        }
+      } catch(e) {
+        alert("Ошибка входа через Google: " + e.message);
+      }
+    }
+
+    window.addEventListener('load', function() {
+      const isNative = window.Capacitor && window.Capacitor.isNativePlatform();
+
+      if (isNative) {
+        // Android APK: show Telegram code + Google, hide widget
+        document.getElementById('tg-widget').style.display = 'none';
+        document.getElementById('tg-code-section').style.display = 'block';
+        setupTelegramCodeAuth();
+
+        const gBtn = document.getElementById('google-btn');
+        if (gBtn) {
+          gBtn.style.display = 'flex';
+          gBtn.onclick = googleSignIn;
+        }
+      }
+      // Web: Telegram widget shown by default (loaded separately)
+    });
 
     document.getElementById("skip-btn").onclick = function() {
       localStorage.removeItem("gulcrm_tguser");
