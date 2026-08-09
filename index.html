@@ -1079,12 +1079,12 @@ function App() {
 
     // ── NAV ───────────────────────────────────────────────────────────────────
   const NAV = [
-    {id:"dashboard", ic:<Home size={20}/>,     ru:"Главная",    uz:"Bosh"},
-    {id:"calendar",  ic:<Calendar size={20}/>, ru:"Календарь",  uz:"Kalendar"},
-    {id:"clients",   ic:<Users size={20}/>,    ru:"Клиенты",    uz:"Mijozlar"},
-    {id:"finance",   ic:<Wallet size={20}/>,   ru:"Финансы",    uz:"Moliya"},
-    {id:"stats",     ic:<BarChart2 size={20}/>,ru:"Статистика",  uz:"Statistika"},
-    {id:"settings",  ic:<Settings size={20}/>, ru:"Настройки",  uz:"Sozlama"},
+    {id:"dashboard", ic:"🏠", ru:"Главная",    uz:"Bosh"},
+    {id:"calendar",  ic:"📅", ru:"Календарь",  uz:"Kalendar"},
+    {id:"clients",   ic:"👤", ru:"Клиенты",    uz:"Mijozlar"},
+    {id:"finance",   ic:"💰", ru:"Финансы",    uz:"Moliya"},
+    {id:"stats",     ic:"📊", ru:"Статистика", uz:"Statistika"},
+    {id:"settings",  ic:"⚙️", ru:"Настройки",  uz:"Sozlama"},
   ];
 
   // ── SCREENS ───────────────────────────────────────────────────────────────
@@ -1325,9 +1325,9 @@ function App() {
           <div style={{fontWeight:800, fontSize:22, letterSpacing:-.5, color:tx}}>{lang==="uz"?"Kalendar":"Календарь"}</div>
           <div style={{display:"flex", gap:6, alignItems:"center"}}>
             <span style={{fontSize:11, fontWeight:600, color:tx3}}>{months[weekStart.getMonth()]} {weekStart.getFullYear()}</span>
-            <button onClick={() => setWeekOffset(w => w-1)} style={{width:28, height:28, borderRadius:"50%", border:`1.5px solid ${bd}`, background:sf, color:tx2, fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit"}}><ChevronLeft size={18}/></button>
+            <button onClick={() => setWeekOffset(w => w-1)} style={{width:28, height:28, borderRadius:"50%", border:`1.5px solid ${bd}`, background:sf, color:tx2, fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit"}}>‹</button>
             <button onClick={() => { setWeekOffset(0); setSelDay(new Date()); }} style={{height:25, padding:"0 9px", borderRadius:12, border:"1.5px solid rgba(255,107,157,.4)", background:"rgba(255,107,157,.1)", color:acc2, fontSize:11, fontWeight:700, cursor:"pointer", fontFamily:"inherit"}}>{lang==="uz"?"Bugun":"Сегодня"}</button>
-            <button onClick={() => setWeekOffset(w => w+1)} style={{width:28, height:28, borderRadius:"50%", border:`1.5px solid ${bd}`, background:sf, color:tx2, fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit"}}><ChevronRight size={18}/></button>
+            <button onClick={() => setWeekOffset(w => w+1)} style={{width:28, height:28, borderRadius:"50%", border:`1.5px solid ${bd}`, background:sf, color:tx2, fontSize:15, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit"}}>›</button>
           </div>
         </div>
 
@@ -1500,7 +1500,7 @@ function App() {
       <div style={{paddingBottom:80}}>
         <div style={{fontWeight:800, fontSize:22, letterSpacing:-.5, padding:"14px 20px 8px", color:tx}}>{lang==="uz"?"Mijozlar":"Клиенты"}</div>
         <div style={{margin:"0 20px 10px", height:44, background:sf, borderRadius:13, border:`1.5px solid ${bd}`, display:"flex", alignItems:"center", padding:"0 13px", gap:10}}>
-          <Search size={16} color={tx3}/>
+          🔍
           <input value={clFilter} onChange={e => setClFilter(e.target.value)}
             placeholder={lang==="uz"?"Mijoz qidirish...":"Поиск клиента..."}
             style={{flex:1, border:"none", background:"none", fontSize:14, color:tx, outline:"none", fontFamily:"inherit"}} />
@@ -2446,7 +2446,7 @@ function App() {
               onPointerDown={e=>e.currentTarget.style.transform="scale(.9)"}
               onPointerUp={e=>e.currentTarget.style.transform="scale(1)"}
               onPointerLeave={e=>e.currentTarget.style.transform="scale(1)"}>
-              <Plus size={24} strokeWidth={2.5}/></button>
+              ＋</button>
           )}
           {modalEditSvc()}
           {modalCloseAppt()}
