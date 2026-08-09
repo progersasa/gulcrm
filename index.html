@@ -1791,8 +1791,23 @@ function App() {
         </div>
 
         <div style={{padding:"0 20px 14px"}}>
-          <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, marginBottom:9, textTransform:"uppercase"}}>
-            {lang==="uz"?"MENING XIZMATLARIM":"МОИ УСЛУГИ"}
+          <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:9}}>
+            <div style={{fontSize:11, fontWeight:700, color:tx3, letterSpacing:.6, textTransform:"uppercase"}}>
+              {lang==="uz"?"MENING XIZMATLARIM":"МОИ УСЛУГИ"}
+            </div>
+            <button onClick={()=>{
+              const name = prompt(lang==="uz"?"Xizmat nomi (RU):" : "Название (RU):");
+              if (!name) return;
+              const nameUz = prompt(lang==="uz"?"Xizmat nomi (UZ):" : "Название (UZ):") || name;
+              const price = parseInt(prompt(lang==="uz"?"Narxi (so'm):" : "Цена (сум):") || "0");
+              const dur = parseInt(prompt(lang==="uz"?"Davomiylik (daq):" : "Длительность (мин):") || "60");
+              setMyServices(prev => [...prev, {id: Date.now(), name, nameUz, price, dur}]);
+              showToast(lang==="uz"?"Xizmat qo'shildi!":"Услуга добавлена!", "✅");
+            }} style={{height:30, padding:"0 12px", borderRadius:10, border:"none",
+              background:grad, color:"#fff", fontSize:12, fontWeight:700,
+              cursor:"pointer", fontFamily:"inherit"}}>
+              + {lang==="uz"?"Qo'shish":"Добавить"}
+            </button>
           </div>
           <div style={{display:"flex", flexDirection:"column", gap:7}}>
             {myServices.map((s, i) => (
