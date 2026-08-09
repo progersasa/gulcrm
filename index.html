@@ -26,9 +26,19 @@
   <div id="loading">
     <div class="ld-logo">🌸</div>
     <div class="ld-name">GulCRM</div>
-    <div class="ld-sub">Beauty Master CRM</div>
+    <div class="ld-sub" id="ld-status">Загрузка...</div>
     <div class="ld-spin"></div>
   </div>
+  <script>
+    // Show progress while Babel compiles
+    const msgs = ['Загрузка...', 'Инициализация...', 'Почти готово...', 'Запуск...'];
+    let mi = 0;
+    const st = document.getElementById('ld-status');
+    const iv = setInterval(()=>{
+      mi = (mi+1) % msgs.length;
+      if(st) st.textContent = msgs[mi];
+    }, 2000);
+  </script>
   <div id="root"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -408,6 +418,12 @@ function App() {
 
   // ── storage (localStorage) ──
   const saveRef = useRef(null);
+  // Hide loading screen when app mounts
+  useEffect(() => {
+    const l = document.getElementById('loading');
+    if(l) { l.style.opacity='0'; setTimeout(()=>l.remove(),600); }
+  }, []);
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem("bp6");
@@ -2466,11 +2482,15 @@ function App() {
 }
 
 
-    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+    // Hide loading only after React actually mounts
+    const origRender = ReactDOM.createRoot(document.getElementById('root'));
+    origRender.render(React.createElement(App));
+    // Babel compilation on mobile takes 3-8 seconds
+    // Loading screen auto-hides when App renders via useEffect
     setTimeout(()=>{
       const l=document.getElementById('loading');
       if(l){l.style.opacity='0';setTimeout(()=>l.remove(),600);}
-    },1000);
+    },15000); // fallback after 15 sec
   </script>
 </body>
 </html>
